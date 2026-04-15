@@ -1,0 +1,281 @@
+@{
+    ViewData["Title"] = "Operator Entry";
+}
+
+<div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem; max-width: 1400px; margin: 0 auto; align-items: start;">
+    
+    <!-- Operator Form -->
+    <div class="glass-card">
+        <h2 style="margin-bottom: 2rem; text-align: center;">Operator Entry</h2>
+        
+        <form id="operatorForm">
+            <div class="form-group">
+                <label for="badgeNumber">Badge Number</label>
+                <select id="badgeNumber" class="form-control" required>
+                    <option value="">Select Operator...</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="part">Part Number</label>
+                <select id="part" class="form-control" required>
+                    <option value="">Select Part...</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="serial">Serial Number</label>
+                <input type="text" id="serial" class="form-control" required placeholder="e.g. SN-00123">
+            </div>
+            
+            <div class="form-group">
+                <label for="opNumber">Operation Number</label>
+                <select id="opNumber" class="form-control" required>
+                    <option value="">Select Operation...</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                Start Operation
+            </button>
+        </form>
+    </div>
+
+    <!-- Active Operations List -->
+    <div class="glass-card">
+        <h2 style="margin-bottom: 2rem; text-align: center;">My Open Operations</h2>
+        
+        <div id="activeItemsList" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Active items will be injected here -->
+        </div>
+    </div>
+</div>
+
+<dialog id="completionModal" class="glass-card" style="border: 1px solid var(--glass-border); margin: auto; padding: 2rem; border-radius: 16px; background: rgba(15, 23, 42, 0.95); color: var(--text-primary); max-width: 400px; width: 100%; box-shadow: var(--glass-shadow);">
+    <h3 style="margin-bottom: 1rem;">Confirm Completion</h3>
+    <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Please enter your Badge Number to confirm.</p>
+    <div class="form-group">
+        <select id="confirmBadge" class="form-control" required>
+            <option value="">Select your Badge...</option>
+        </select>
+    </div>
+    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+        <button type="button" class="btn" style="background: rgba(255,255,255,0.1); color: white;" onclick="closeModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="submitCompletion()">Complete</button>
+    </div>
+</dialog>
+
+<style>
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+</style>
+
+<div id="toastContainer" class="toast-container"></div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        const API_BASE = 'http://localhost:5016/api/workitems';
+        const MASTER_API_BASE = 'http://localhost:5016/api/masterdata';
+
+        async function populateDropdowns() {
+            try {
+                // Fetch Master Data
+                const [opsRes, partsRes, opsDefRes] = await Promise.all([
+                    fetch(`${MASTER_API_BASE}/operators`),
+                    fetch(`${MASTER_API_BASE}/parts`),
+                    fetch(`${MASTER_API_BASE}/operations`)
+                ]);
+
+                if (opsRes.ok && partsRes.ok && opsDefRes.ok) {
+                    const operators = await opsRes.json();
+                    const parts = await partsRes.json();
+                    const operations = await opsDefRes.json();
+
+                    // Populate Operators
+                    const badgeSelect = document.getElementById('badgeNumber');
+                    const confirmSelect = document.getElementById('confirmBadge');
+                    operators.forEach(op => {
+                        badgeSelect.add(new Option(`${op.name} (${op.badgeNumber})`, op.badgeNumber));
+                        confirmSelect.add(new Option(`${op.name} (${op.badgeNumber})`, op.badgeNumber));
+                    });
+
+                    // Populate Parts
+                    const partSelect = document.getElementById('part');
+                    parts.forEach(p => partSelect.add(new Option(`${p.description} (${p.partNumber})`, p.partNumber)));
+
+                    // Populate Operations
+                    const opSelect = document.getElementById('opNumber');
+                    operations.forEach(o => opSelect.add(new Option(`${o.description} (${o.opNumber})`, o.opNumber)));
+                }
+            } catch (err) {
+                console.error("Failed to fetch master data", err);
+            }
+        }
+
+        // Add simple toast notification function
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideUp 0.3s ease-in reverse forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        async function fetchActiveItems() {
+            try {
+                const response = await fetch(`${API_BASE}/active`);
+                if (response.ok) {
+                    const items = await response.json();
+                    renderActiveItems(items);
+                }
+            } catch (err) {
+                console.error("Failed to fetch active items:", err);
+            }
+        }
+
+        let pendingCompletion = null;
+
+        function promptCompletion(part, serial, opNumber) {
+            pendingCompletion = { part, serial, opNumber };
+            document.getElementById('confirmBadge').value = '';
+            document.getElementById('completionModal').showModal();
+        }
+
+        function closeModal() {
+            document.getElementById('completionModal').close();
+            pendingCompletion = null;
+        }
+
+        async function submitCompletion() {
+            if (!pendingCompletion) return;
+            
+            const badge = document.getElementById('confirmBadge').value;
+            if (!badge.trim()) {
+                showToast('Badge number is required to confirm', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        part: pendingCompletion.part, 
+                        serial: pendingCompletion.serial, 
+                        opNumber: pendingCompletion.opNumber,
+                        badgeNumber: badge // Sent along for API auditing
+                    })
+                });
+                
+                if (response.ok) {
+                    showToast('Operation marked as completed');
+                    closeModal();
+                } else {
+                    showToast('Failed to complete operation', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('API connection failed', 'error');
+            }
+        }
+
+        function renderActiveItems(items) {
+            const listContainer = document.getElementById('activeItemsList');
+            
+            if (items.length === 0) {
+                listContainer.innerHTML = `
+                    <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                        <span style="font-size: 2rem; display: block; margin-bottom: 1rem;">✅</span>
+                        You have no open operations.
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            items.forEach(item => {
+                html += `
+                    <div class="work-item" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
+                                Op: ${item.opNumber} | Part: <span style="color: var(--accent-color);">${item.part}</span>
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                                Badge: ${item.badgeNumber} | Serial: ${item.serial}
+                            </div>
+                        </div>
+                        <button class="btn btn-complete" style="width: auto; margin-top: 0; padding: 0.5rem 1rem;" 
+                                onclick="promptCompletion('${item.part}', '${item.serial}', '${item.opNumber}')">
+                            Complete
+                        </button>
+                    </div>
+                `;
+            });
+            listContainer.innerHTML = html;
+        }
+
+        document.getElementById('operatorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const payload = {
+                badgeNumber: document.getElementById('badgeNumber').value,
+                part: document.getElementById('part').value,
+                serial: document.getElementById('serial').value,
+                opNumber: document.getElementById('opNumber').value
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    showToast('Operation started successfully!');
+                    e.target.reset(); // clear form
+                } else {
+                    const text = await response.text();
+                    showToast(`Error: ${text}`, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast(`Failed to connect to API. Please ensure it is running.`, 'error');
+            }
+        });
+
+        // Initialize connection
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("http://localhost:5016/dashboardHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("UpdateDashboard", function () {
+            fetchActiveItems(); // Always sync our list via websockets
+        });
+
+        async function startSignalR() {
+            try {
+                await connection.start();
+                console.log("SignalR Connected.");
+            } catch (err) {
+                console.log(err);
+                setTimeout(startSignalR, 5000);
+            }
+        }
+
+        // Initial fetch
+        document.addEventListener('DOMContentLoaded', () => {
+            populateDropdowns();
+            fetchActiveItems();
+            startSignalR();
+        });
+    </script>
+}

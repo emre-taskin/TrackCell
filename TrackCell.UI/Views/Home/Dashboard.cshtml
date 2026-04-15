@@ -1,0 +1,147 @@
+@{
+    ViewData["Title"] = "Kaizen Kanban Dashboard";
+    ViewData["IsFullscreen"] = true;
+}
+
+<div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2>Kaizen Kanban Dashboard</h2>
+    <div style="color: var(--text-secondary); font-size: 0.9rem;">
+        Last updated: <span id="lastUpdated">-</span>
+    </div>
+</div>
+
+<div id="dashboardGrid" class="dashboard-grid">
+    <!-- Operations will be dynamically injected here -->
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        const API_BASE = 'http://localhost:5016/api/workitems';
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideUp 0.3s ease-in reverse forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        async function fetchActiveItems() {
+            try {
+                const response = await fetch(`${API_BASE}/active`);
+                if (response.ok) {
+                    const items = await response.json();
+                    renderDashboard(items);
+                    document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+                }
+            } catch (err) {
+                console.error("Failed to fetch items:", err);
+            }
+        }
+
+        function renderDashboard(items) {
+            const grid = document.getElementById('dashboardGrid');
+            
+            // Group items by OpNumber
+            const opsMap = {};
+            items.forEach(item => {
+                if (!opsMap[item.opNumber]) {
+                    opsMap[item.opNumber] = [];
+                }
+                opsMap[item.opNumber].push(item);
+            });
+
+            // If empty, show a message
+            if (Object.keys(opsMap).length === 0) {
+                grid.innerHTML = `
+                    <div style="width: 100%; max-width: 600px; margin: auto; align-self: center; text-align: center; color: var(--text-secondary); padding: 4rem; background: var(--glass-bg); border-radius: 16px; border: 1px solid var(--glass-border); transform: rotateX(180deg);">
+                        <h3>🎉 No active parts in process!</h3>
+                        <p style="margin-top: 0.5rem;">Work center is completely clear.</p>
+                    </div>`;
+                return;
+            }
+
+            // Otherwise, render columns
+            let html = '';
+            for (const [opNumber, opItems] of Object.entries(opsMap)) {
+                let badgeColor = 'var(--success-color)'; // Green for 1-2
+                let count = opItems.length;
+                if (count >= 3 && count <= 5) {
+                    badgeColor = '#f59e0b'; // Orange for 3-5
+                } else if (count > 5) {
+                    badgeColor = 'var(--danger-color)'; // Red for > 5
+                }
+
+                html += `
+                    <div class="op-column">
+                        <div class="op-header">
+                            <span>${opNumber}</span>
+                            <span class="op-badge" style="background: ${badgeColor};">${count}</span>
+                        </div>
+                        <div class="op-items">
+                `;
+                
+                opItems.forEach(item => {
+                    const idSafe = `${item.part}-${item.serial}-${item.opNumber}`.replace(/[^a-zA-Z0-9-]/g, '');
+                    html += `
+                        <div class="work-item" id="item-${idSafe}">
+                            <div class="work-item-detail">
+                                <span class="label">Badge</span>
+                                <span class="value">${item.badgeNumber}</span>
+                            </div>
+                            <div class="work-item-detail">
+                                <span class="label">Part</span>
+                                <span class="value" style="color: var(--accent-color); font-weight: 600;">${item.part}</span>
+                            </div>
+                            <div class="work-item-detail">
+                                <span class="label">Serial</span>
+                                <span class="value">${item.serial}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            grid.innerHTML = html;
+        }
+
+        // Initialize connection
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("http://localhost:5016/dashboardHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("UpdateDashboard", function () {
+            console.log("Redis state changed! SignalR instructed Dashboard to update.");
+            fetchActiveItems();
+            showToast('Live update received from Redis', 'success');
+        });
+
+        async function startSignalR() {
+            try {
+                await connection.start();
+                console.log("SignalR Connected.");
+            } catch (err) {
+                console.log(err);
+                setTimeout(startSignalR, 5000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchActiveItems(); // Initial Load
+            startSignalR(); // Start Websocket Listener
+        });
+    </script>
+}

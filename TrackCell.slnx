@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="TrackCell.Api/TrackCell.Api.csproj" />
+  <Project Path="TrackCell.UI/TrackCell.UI.csproj" />
+</Solution>
