@@ -3,39 +3,59 @@
 }
 
 <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem; max-width: 1400px; margin: 0 auto; align-items: start;">
-    
+
     <!-- Operator Form -->
     <div class="glass-card">
-        <h2 style="margin-bottom: 2rem; text-align: center;">Operator Entry</h2>
-        
+        <h2 style="margin-bottom: 0.5rem; text-align: center;">Operator Entry</h2>
+        <p style="text-align:center; color: var(--text-secondary); font-size:0.85rem; margin-bottom:1.5rem;">Scan badge → scan serial → confirm operation.</p>
+
         <form id="operatorForm">
+            <!-- Step 1: Badge -->
             <div class="form-group">
-                <label for="badgeNumber">Badge Number</label>
-                <select id="badgeNumber" class="form-control" required>
-                    <option value="">Select Operator...</option>
+                <label for="badgeNumber">
+                    <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:var(--accent-color);color:white;text-align:center;line-height:22px;font-size:0.75rem;margin-right:6px;">1</span>
+                    Badge Number
+                </label>
+                <input type="text" id="badgeNumber" class="form-control" required autocomplete="off" autofocus
+                       placeholder="Scan or type badge..." />
+                <div id="operatorInfo" style="margin-top:0.5rem; font-size:0.85rem; min-height:1.2rem; color: var(--text-secondary);"></div>
+            </div>
+
+            <!-- Step 2: Serial -->
+            <div class="form-group">
+                <label for="serial">
+                    <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#475569;color:white;text-align:center;line-height:22px;font-size:0.75rem;margin-right:6px;" id="step2Badge">2</span>
+                    Serial Number
+                </label>
+                <input type="text" id="serial" class="form-control" required autocomplete="off"
+                       placeholder="Scan or type serial..." disabled />
+                <div id="serialInfo" style="margin-top:0.5rem; font-size:0.85rem; min-height:1.2rem; color: var(--text-secondary);"></div>
+            </div>
+
+            <!-- Step 3: Part (auto-filled) -->
+            <div class="form-group">
+                <label for="part">
+                    <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#475569;color:white;text-align:center;line-height:22px;font-size:0.75rem;margin-right:6px;" id="step3Badge">3</span>
+                    Part Number
+                </label>
+                <select id="part" class="form-control" required disabled>
+                    <option value="">Scan serial first...</option>
+                </select>
+                <div id="partInfo" style="margin-top:0.5rem; font-size:0.85rem; min-height:1.2rem; color: var(--text-secondary);"></div>
+            </div>
+
+            <!-- Step 4: Operation -->
+            <div class="form-group">
+                <label for="opNumber">
+                    <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#475569;color:white;text-align:center;line-height:22px;font-size:0.75rem;margin-right:6px;" id="step4Badge">4</span>
+                    Operation Number
+                </label>
+                <select id="opNumber" class="form-control" required disabled>
+                    <option value="">Select part first...</option>
                 </select>
             </div>
-            
-            <div class="form-group">
-                <label for="part">Part Number</label>
-                <select id="part" class="form-control" required>
-                    <option value="">Select Part...</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="serial">Serial Number</label>
-                <input type="text" id="serial" class="form-control" required placeholder="e.g. SN-00123">
-            </div>
-            
-            <div class="form-group">
-                <label for="opNumber">Operation Number</label>
-                <select id="opNumber" class="form-control" required>
-                    <option value="">Select Operation...</option>
-                </select>
-            </div>
-            
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="startBtn" disabled>
                 Start Operation
             </button>
         </form>
@@ -44,7 +64,7 @@
     <!-- Active Operations List -->
     <div class="glass-card">
         <h2 style="margin-bottom: 2rem; text-align: center;">My Open Operations</h2>
-        
+
         <div id="activeItemsList" style="display: flex; flex-direction: column; gap: 1rem;">
             <!-- Active items will be injected here -->
         </div>
@@ -53,11 +73,9 @@
 
 <dialog id="completionModal" class="glass-card" style="border: 1px solid var(--glass-border); margin: auto; padding: 2rem; border-radius: 16px; background: rgba(15, 23, 42, 0.95); color: var(--text-primary); max-width: 400px; width: 100%; box-shadow: var(--glass-shadow);">
     <h3 style="margin-bottom: 1rem;">Confirm Completion</h3>
-    <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Please enter your Badge Number to confirm.</p>
+    <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Please scan or type your Badge Number to confirm.</p>
     <div class="form-group">
-        <select id="confirmBadge" class="form-control" required>
-            <option value="">Select your Badge...</option>
-        </select>
+        <input type="text" id="confirmBadge" class="form-control" required placeholder="Scan badge..." />
     </div>
     <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
         <button type="button" class="btn" style="background: rgba(255,255,255,0.1); color: white;" onclick="closeModal()">Cancel</button>
@@ -66,10 +84,17 @@
 </dialog>
 
 <style>
-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-}
+    dialog::backdrop {
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+    }
+    .form-control:disabled {
+        background: rgba(255,255,255,0.04) !important;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    .step-badge-active { background: var(--accent-color) !important; }
+    .step-badge-done { background: var(--success-color, #10b981) !important; }
 </style>
 
 <div id="toastContainer" class="toast-container"></div>
@@ -77,104 +102,304 @@ dialog::backdrop {
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <script>
-        const API_BASE = 'http://localhost:5016/api/workitems';
-        const MASTER_API_BASE = 'http://localhost:5016/api/masterdata';
+        // URLs are loaded from window.AppConfig (injected by _Layout from appsettings.json).
+        const API_BASE = window.AppConfig.workItems;
+        const MASTER_API_BASE = window.AppConfig.masterData;
 
-        async function populateDropdowns() {
-            try {
-                // Fetch Master Data
-                const [opsRes, partsRes, opsDefRes] = await Promise.all([
-                    fetch(`${MASTER_API_BASE}/operators`),
-                    fetch(`${MASTER_API_BASE}/parts`),
-                    fetch(`${MASTER_API_BASE}/operations`)
-                ]);
+        // --- State ---
+        const state = {
+            operator: null,         // {badgeNumber, name}
+            serialHistory: null,    // {serialNumber, partNumber, completedOps, inProcessOps}
+            allOps: [],             // [{opNumber, description}]
+            allParts: []            // [{partNumber, description}]
+        };
 
-                if (opsRes.ok && partsRes.ok && opsDefRes.ok) {
-                    const operators = await opsRes.json();
-                    const parts = await partsRes.json();
-                    const operations = await opsDefRes.json();
-
-                    // Populate Operators
-                    const badgeSelect = document.getElementById('badgeNumber');
-                    const confirmSelect = document.getElementById('confirmBadge');
-                    operators.forEach(op => {
-                        badgeSelect.add(new Option(`${op.name} (${op.badgeNumber})`, op.badgeNumber));
-                        confirmSelect.add(new Option(`${op.name} (${op.badgeNumber})`, op.badgeNumber));
-                    });
-
-                    // Populate Parts
-                    const partSelect = document.getElementById('part');
-                    parts.forEach(p => partSelect.add(new Option(`${p.description} (${p.partNumber})`, p.partNumber)));
-
-                    // Populate Operations
-                    const opSelect = document.getElementById('opNumber');
-                    operations.forEach(o => opSelect.add(new Option(`${o.description} (${o.opNumber})`, o.opNumber)));
-                }
-            } catch (err) {
-                console.error("Failed to fetch master data", err);
-            }
-        }
-
-        // Add simple toast notification function
+        // --- UI helpers ---
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
             container.appendChild(toast);
-            
             setTimeout(() => {
                 toast.style.animation = 'slideUp 0.3s ease-in reverse forwards';
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
 
-        async function fetchActiveItems() {
+        function setStepBadgeState(num, doneOrActive) {
+            const el = document.getElementById('step' + num + 'Badge');
+            if (!el) return;
+            el.classList.remove('step-badge-active', 'step-badge-done');
+            if (doneOrActive === 'done') el.classList.add('step-badge-done');
+            else if (doneOrActive === 'active') el.classList.add('step-badge-active');
+            else el.style.background = '#475569';
+        }
+
+        function reset() {
+            state.operator = null;
+            state.serialHistory = null;
+
+            const badge = document.getElementById('badgeNumber');
+            const serial = document.getElementById('serial');
+            const part = document.getElementById('part');
+            const op = document.getElementById('opNumber');
+            const start = document.getElementById('startBtn');
+
+            badge.value = '';
+            serial.value = '';
+            part.disabled = true;
+            part.innerHTML = '<option value="">Scan serial first...</option>';
+            op.disabled = true;
+            op.innerHTML = '<option value="">Select part first...</option>';
+            serial.disabled = true;
+            start.disabled = true;
+            document.getElementById('operatorInfo').textContent = '';
+            document.getElementById('serialInfo').textContent = '';
+            document.getElementById('partInfo').textContent = '';
+
+            setStepBadgeState(2, null);
+            setStepBadgeState(3, null);
+            setStepBadgeState(4, null);
+            badge.focus();
+        }
+
+        // --- Master data preloads ---
+        async function loadMasterData() {
             try {
-                const response = await fetch(`${API_BASE}/active`);
-                if (response.ok) {
-                    const items = await response.json();
-                    renderActiveItems(items);
+                const [pRes, oRes] = await Promise.all([
+                    fetch(`${MASTER_API_BASE}/parts`),
+                    fetch(`${MASTER_API_BASE}/operations`)
+                ]);
+                if (pRes.ok) state.allParts = await pRes.json();
+                if (oRes.ok) state.allOps = await oRes.json();
+            } catch (e) { console.warn('master data load failed', e); }
+        }
+
+        // --- Step 1: Badge scan ---
+        async function lookupOperator(badge) {
+            const info = document.getElementById('operatorInfo');
+            info.style.color = 'var(--text-secondary)';
+            info.textContent = 'Looking up badge...';
+            try {
+                const res = await fetch(`${MASTER_API_BASE}/operators/${encodeURIComponent(badge)}`);
+                if (res.status === 404) {
+                    info.style.color = 'var(--danger-color, #ef4444)';
+                    info.textContent = `Unknown badge: ${badge}`;
+                    state.operator = null;
+                    return false;
                 }
-            } catch (err) {
-                console.error("Failed to fetch active items:", err);
+                if (!res.ok) throw new Error('lookup failed');
+                state.operator = await res.json();
+                info.style.color = 'var(--success-color, #10b981)';
+                info.innerHTML = `<strong>${state.operator.name}</strong> (${state.operator.badgeNumber})`;
+                setStepBadgeState(2, 'active');
+                // Unlock serial step + autofocus
+                const serialEl = document.getElementById('serial');
+                serialEl.disabled = false;
+                serialEl.focus();
+                return true;
+            } catch (e) {
+                info.style.color = 'var(--danger-color, #ef4444)';
+                info.textContent = 'Lookup failed (API down?)';
+                return false;
             }
         }
 
-        let pendingCompletion = null;
+        document.getElementById('badgeNumber').addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const v = e.target.value.trim();
+                if (!v) return;
+                const ok = await lookupOperator(v);
+                if (ok) setStepBadgeState(2, 'active');
+            }
+        });
 
-        function promptCompletion(part, serial, opNumber) {
-            pendingCompletion = { part, serial, opNumber };
-            document.getElementById('confirmBadge').value = '';
-            document.getElementById('completionModal').showModal();
+        // --- Step 2: Serial scan ---
+        async function lookupSerial(serial) {
+            const info = document.getElementById('serialInfo');
+            info.style.color = 'var(--text-secondary)';
+            info.textContent = 'Looking up serial...';
+            try {
+                const res = await fetch(`${MASTER_API_BASE}/serial/${encodeURIComponent(serial)}`);
+                if (res.status === 404) {
+                    // Serial not found — operator must pick the part manually.
+                    state.serialHistory = null;
+                    info.style.color = '#f59e0b';
+                    info.textContent = 'New serial. Choose a part below.';
+                    enablePartManualSelect();
+                    return true;
+                }
+                if (!res.ok) throw new Error('serial lookup failed');
+                state.serialHistory = await res.json();
+                info.style.color = 'var(--success-color, #10b981)';
+                const completedTxt = state.serialHistory.completedOps.length
+                    ? ` · Completed: ${state.serialHistory.completedOps.join(', ')}`
+                    : '';
+                info.innerHTML = `Found in history${completedTxt}`;
+                applySerialMatch();
+                return true;
+            } catch (e) {
+                info.style.color = 'var(--danger-color, #ef4444)';
+                info.textContent = 'Lookup failed.';
+                return false;
+            }
         }
 
+        function applySerialMatch() {
+            // Auto-fill the part dropdown with just the matched part (read-only)
+            const partEl = document.getElementById('part');
+            const opEl = document.getElementById('opNumber');
+            const partInfoEl = document.getElementById('partInfo');
+
+            partEl.innerHTML = '';
+            const partNumber = state.serialHistory.partNumber;
+            const matchPart = state.allParts.find(p => p.partNumber === partNumber);
+            const desc = matchPart ? matchPart.description : (state.serialHistory.partDescription || '');
+            partEl.add(new Option(`${desc ? desc + ' ' : ''}(${partNumber})`, partNumber));
+            partEl.value = partNumber;
+            partEl.disabled = true;  // locked because serial is bound to this part
+            partInfoEl.style.color = 'var(--text-secondary)';
+            partInfoEl.textContent = 'Auto-filled from serial history';
+
+            setStepBadgeState(3, 'done');
+            populateOpsForPart(state.serialHistory);
+        }
+
+        function enablePartManualSelect() {
+            const partEl = document.getElementById('part');
+            const partInfoEl = document.getElementById('partInfo');
+            partEl.innerHTML = '<option value="">Select Part...</option>';
+            state.allParts.forEach(p =>
+                partEl.add(new Option(`${p.description} (${p.partNumber})`, p.partNumber))
+            );
+            partEl.disabled = false;
+            partInfoEl.style.color = 'var(--text-secondary)';
+            partInfoEl.textContent = 'Select the part for this new serial';
+            setStepBadgeState(3, 'active');
+            partEl.focus();
+        }
+
+        function populateOpsForPart(serialHistory) {
+            const opEl = document.getElementById('opNumber');
+            opEl.innerHTML = '<option value="">Select Operation...</option>';
+            const completed = serialHistory ? new Set(serialHistory.completedOps) : new Set();
+            const inProcess = serialHistory ? new Set(serialHistory.inProcessOps) : new Set();
+
+            // First non-completed, non-in-process op = next suggested op
+            let suggestedIdx = -1;
+            state.allOps.forEach((o, i) => {
+                let label = `${o.description} (${o.opNumber})`;
+                if (completed.has(o.opNumber)) label = '✓ ' + label + ' — done';
+                else if (inProcess.has(o.opNumber)) label = '⏳ ' + label + ' — in process';
+                else if (suggestedIdx === -1) { suggestedIdx = i; label = '▶ ' + label; }
+                const opt = new Option(label, o.opNumber);
+                if (completed.has(o.opNumber)) opt.disabled = true;
+                opEl.add(opt);
+            });
+            opEl.disabled = false;
+            if (suggestedIdx >= 0) opEl.selectedIndex = suggestedIdx + 1; // +1 for placeholder
+            setStepBadgeState(4, 'active');
+            document.getElementById('startBtn').disabled = false;
+            opEl.focus();
+        }
+
+        document.getElementById('serial').addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const v = e.target.value.trim();
+                if (!v) return;
+                await lookupSerial(v);
+            }
+        });
+
+        // If user manually picks a part (no history), populate ops for that part
+        document.getElementById('part').addEventListener('change', () => {
+            const v = document.getElementById('part').value;
+            if (!v) return;
+            setStepBadgeState(3, 'done');
+            populateOpsForPart(null);
+        });
+
+        document.getElementById('opNumber').addEventListener('change', () => {
+            const v = document.getElementById('opNumber').value;
+            document.getElementById('startBtn').disabled = !v;
+            if (v) setStepBadgeState(4, 'done');
+        });
+
+        // --- Start operation ---
+        document.getElementById('operatorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!state.operator) {
+                showToast('Scan badge first', 'error'); return;
+            }
+            const payload = {
+                badgeNumber: state.operator.badgeNumber,
+                part: document.getElementById('part').value,
+                serial: document.getElementById('serial').value.trim(),
+                opNumber: document.getElementById('opNumber').value
+            };
+            if (!payload.part || !payload.serial || !payload.opNumber) {
+                showToast('All fields are required', 'error'); return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    showToast('Operation started successfully!');
+                    reset();
+                } else {
+                    const text = await response.text();
+                    showToast(`Error: ${text}`, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast(`Failed to connect to API.`, 'error');
+            }
+        });
+
+        // --- Active items list (mostly unchanged) ---
+        async function fetchActiveItems() {
+            try {
+                const response = await fetch(`${API_BASE}/active`);
+                if (response.ok) renderActiveItems(await response.json());
+            } catch (err) { console.error("Failed to fetch active items:", err); }
+        }
+
+        let pendingCompletion = null;
+        function promptCompletion(part, serial, opNumber) {
+            pendingCompletion = { part, serial, opNumber };
+            const cb = document.getElementById('confirmBadge');
+            cb.value = state.operator ? state.operator.badgeNumber : '';
+            document.getElementById('completionModal').showModal();
+            cb.focus();
+        }
         function closeModal() {
             document.getElementById('completionModal').close();
             pendingCompletion = null;
         }
-
         async function submitCompletion() {
             if (!pendingCompletion) return;
-            
-            const badge = document.getElementById('confirmBadge').value;
-            if (!badge.trim()) {
-                showToast('Badge number is required to confirm', 'error');
-                return;
-            }
-
+            const badge = document.getElementById('confirmBadge').value.trim();
+            if (!badge) { showToast('Badge number is required', 'error'); return; }
             try {
                 const response = await fetch(`${API_BASE}/complete`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        part: pendingCompletion.part, 
-                        serial: pendingCompletion.serial, 
+                    body: JSON.stringify({
+                        part: pendingCompletion.part,
+                        serial: pendingCompletion.serial,
                         opNumber: pendingCompletion.opNumber,
-                        badgeNumber: badge // Sent along for API auditing
+                        badgeNumber: badge
                     })
                 });
-                
                 if (response.ok) {
                     showToast('Operation marked as completed');
                     closeModal();
@@ -186,19 +411,20 @@ dialog::backdrop {
                 showToast('API connection failed', 'error');
             }
         }
+        window.closeModal = closeModal;
+        window.submitCompletion = submitCompletion;
+        window.promptCompletion = promptCompletion;
 
         function renderActiveItems(items) {
             const listContainer = document.getElementById('activeItemsList');
-            
             if (items.length === 0) {
                 listContainer.innerHTML = `
                     <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
                         <span style="font-size: 2rem; display: block; margin-bottom: 1rem;">✅</span>
-                        You have no open operations.
+                        No open operations.
                     </div>`;
                 return;
             }
-
             let html = '';
             items.forEach(item => {
                 html += `
@@ -211,71 +437,34 @@ dialog::backdrop {
                                 Badge: ${item.badgeNumber} | Serial: ${item.serial}
                             </div>
                         </div>
-                        <button class="btn btn-complete" style="width: auto; margin-top: 0; padding: 0.5rem 1rem;" 
+                        <button class="btn btn-complete" style="width: auto; margin-top: 0; padding: 0.5rem 1rem;"
                                 onclick="promptCompletion('${item.part}', '${item.serial}', '${item.opNumber}')">
                             Complete
                         </button>
-                    </div>
-                `;
+                    </div>`;
             });
             listContainer.innerHTML = html;
         }
 
-        document.getElementById('operatorForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const payload = {
-                badgeNumber: document.getElementById('badgeNumber').value,
-                part: document.getElementById('part').value,
-                serial: document.getElementById('serial').value,
-                opNumber: document.getElementById('opNumber').value
-            };
-            
-            try {
-                const response = await fetch(`${API_BASE}/start`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                if (response.ok) {
-                    showToast('Operation started successfully!');
-                    e.target.reset(); // clear form
-                } else {
-                    const text = await response.text();
-                    showToast(`Error: ${text}`, 'error');
-                }
-            } catch (err) {
-                console.error(err);
-                showToast(`Failed to connect to API. Please ensure it is running.`, 'error');
-            }
-        });
-
-        // Initialize connection
+        // --- SignalR ---
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("http://localhost:5016/dashboardHub")
+            .withUrl(window.AppConfig.hubUrl)
             .withAutomaticReconnect()
             .build();
 
-        connection.on("UpdateDashboard", function () {
-            fetchActiveItems(); // Always sync our list via websockets
-        });
+        connection.on("UpdateDashboard", () => fetchActiveItems());
 
         async function startSignalR() {
-            try {
-                await connection.start();
-                console.log("SignalR Connected.");
-            } catch (err) {
-                console.log(err);
-                setTimeout(startSignalR, 5000);
-            }
+            try { await connection.start(); console.log("SignalR Connected."); }
+            catch (err) { console.log(err); setTimeout(startSignalR, 5000); }
         }
 
-        // Initial fetch
-        document.addEventListener('DOMContentLoaded', () => {
-            populateDropdowns();
-            fetchActiveItems();
+        // --- Init ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadMasterData();
+            await fetchActiveItems();
             startSignalR();
+            reset(); // sets initial focus on badge field
         });
     </script>
 }

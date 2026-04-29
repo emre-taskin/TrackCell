@@ -1,9 +1,23 @@
+@inject Microsoft.Extensions.Options.IOptions<ApiSettings> ApiOptions
+@{
+    var api = ApiOptions.Value;
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - TrackCell MES</title>
+    <script>
+        // Configuration injected from appsettings.json (ApiSettings section).
+        // Update appsettings.json instead of editing URLs in views.
+        window.AppConfig = {
+            apiBase:     '@Html.Raw(api.BaseUrl)',
+            hubUrl:      '@Html.Raw(api.HubUrl)',
+            workItems:   '@Html.Raw(api.WorkItemsUrl)',
+            masterData:  '@Html.Raw(api.MasterUrl)'
+        };
+    </script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,6 +36,7 @@
             <nav class="main-nav">
                 <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" class="nav-link">Operator Entry</a>
                 <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Dashboard" class="nav-link">Kaizen Dashboard</a>
+                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Factory3D" class="nav-link">3D Factory</a>
             </nav>
         </header>
         

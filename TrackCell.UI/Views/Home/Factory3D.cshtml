@@ -1,0 +1,716 @@
+@{
+    ViewData["Title"] = "3D Factory Layout";
+    ViewData["IsFullscreen"] = true;
+}
+
+<div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2>3D Factory Layout — HNK NET75 Cell</h2>
+    <div style="display: flex; gap: 1.5rem; align-items: center;">
+        <div style="color: var(--text-secondary); font-size: 0.9rem;">
+            Last updated: <span id="lastUpdated">-</span>
+        </div>
+        <div style="color: var(--text-secondary); font-size: 0.9rem;">
+            <span id="connStatus" style="color: #f59e0b;">●</span> <span id="connText">Connecting...</span>
+        </div>
+    </div>
+</div>
+
+<div id="factoryRoot" style="position: relative; width: 100%; height: calc(100vh - 180px); border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-border); background: linear-gradient(135deg, #0b1020 0%, #111933 100%);">
+    <canvas id="factoryCanvas" style="display: block; width: 100%; height: 100%;"></canvas>
+
+    <div id="legend" style="position: absolute; top: 16px; left: 16px; padding: 12px 16px; background: rgba(15,23,42,0.7); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); border-radius: 12px; color: var(--text-primary); font-size: 0.85rem; line-height: 1.6; pointer-events: none;">
+        <div style="font-weight: 600; margin-bottom: 6px;">HNK NET75 Vertical Lathe Cell</div>
+        <div style="opacity: 0.75; font-size: 0.8rem; margin-bottom: 8px;">12 machines · 2 rows × 6</div>
+        <div><span style="display:inline-block;width:10px;height:10px;background:#10b981;border-radius:2px;margin-right:6px;"></span>Active (running)</div>
+        <div><span style="display:inline-block;width:10px;height:10px;background:#f59e0b;border-radius:2px;margin-right:6px;"></span>Idle</div>
+        <div><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:2px;margin-right:6px;"></span>Paused (&gt; 2h open)</div>
+        <div style="opacity:0.6;margin-top:6px;">Drag to rotate · Scroll to zoom</div>
+    </div>
+
+    <div id="hoverPanel" style="position: absolute; pointer-events: none; padding: 10px 14px; background: rgba(15,23,42,0.92); border: 1px solid var(--glass-border); border-radius: 10px; color: var(--text-primary); font-size: 0.85rem; display: none; min-width: 240px; box-shadow: var(--glass-shadow); z-index: 5;"></div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        // URLs are loaded from window.AppConfig (injected by _Layout from appsettings.json).
+        const API_BASE = window.AppConfig.workItems;
+        const MASTER_API_BASE = window.AppConfig.masterData;
+
+        // Color scheme:
+        //   ACTIVE (running) = green
+        //   IDLE             = orange
+        //   PAUSED           = red  (item open longer than threshold below)
+        const COLOR_ACTIVE = 0x10b981, COLOR_ACTIVE_HEX = '#10b981';
+        const COLOR_IDLE   = 0xf59e0b, COLOR_IDLE_HEX   = '#f59e0b';
+        const COLOR_PAUSED = 0xef4444, COLOR_PAUSED_HEX = '#ef4444';
+        const PAUSE_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2h without completion = paused
+
+        // Lookup: badgeNumber -> operator display name
+        let operatorMap = {};
+
+        function formatElapsed(ms) {
+            if (!isFinite(ms) || ms < 0) ms = 0;
+            const totalSec = Math.floor(ms / 1000);
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = totalSec % 60;
+            if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
+            return `${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+        }
+
+        function classifyMachine(machine) {
+            if (machine.items.length === 0) {
+                return { state: 'IDLE', color: COLOR_IDLE, hex: COLOR_IDLE_HEX };
+            }
+            const oldest = machine.items.reduce((a, b) =>
+                new Date(a.createdAt) < new Date(b.createdAt) ? a : b
+            );
+            const ageMs = Date.now() - new Date(oldest.createdAt).getTime();
+            if (ageMs > PAUSE_THRESHOLD_MS) {
+                return { state: 'PAUSED', color: COLOR_PAUSED, hex: COLOR_PAUSED_HEX };
+            }
+            return { state: 'ACTIVE', color: COLOR_ACTIVE, hex: COLOR_ACTIVE_HEX };
+        }
+
+        // ---------- Toast ----------
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideUp 0.3s ease-in reverse forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ---------- Three.js setup ----------
+        const root = document.getElementById('factoryRoot');
+        const canvas = document.getElementById('factoryCanvas');
+        const hoverPanel = document.getElementById('hoverPanel');
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b1020);
+        scene.fog = new THREE.Fog(0x0b1020, 60, 160);
+
+        const camera = new THREE.PerspectiveCamera(50, root.clientWidth / root.clientHeight, 0.1, 500);
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(root.clientWidth, root.clientHeight, false);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // Lights
+        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambient);
+        const dir = new THREE.DirectionalLight(0xffffff, 0.95);
+        dir.position.set(25, 50, 20);
+        dir.castShadow = true;
+        dir.shadow.mapSize.set(2048, 2048);
+        dir.shadow.camera.left = -50; dir.shadow.camera.right = 50;
+        dir.shadow.camera.top = 50; dir.shadow.camera.bottom = -50;
+        scene.add(dir);
+        const hemi = new THREE.HemisphereLight(0x88aaff, 0x202030, 0.45);
+        scene.add(hemi);
+
+        // Floor
+        const floorGeo = new THREE.PlaneGeometry(110, 80);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x1a223d, roughness: 0.9, metalness: 0.05 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // Painted floor lanes for the central aisle
+        const aisleMat = new THREE.MeshStandardMaterial({ color: 0xf5c542, roughness: 0.7 });
+        const aisle1 = new THREE.Mesh(new THREE.PlaneGeometry(90, 0.25), aisleMat);
+        aisle1.rotation.x = -Math.PI / 2; aisle1.position.set(0, 0.02, -3); scene.add(aisle1);
+        const aisle2 = new THREE.Mesh(new THREE.PlaneGeometry(90, 0.25), aisleMat);
+        aisle2.rotation.x = -Math.PI / 2; aisle2.position.set(0, 0.02, 3); scene.add(aisle2);
+
+        // Floor grid
+        const grid = new THREE.GridHelper(110, 55, 0x3a4a78, 0x202a4a);
+        grid.position.y = 0.01;
+        scene.add(grid);
+
+        // Walls
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x131a30, roughness: 0.9, transparent: true, opacity: 0.55 });
+        const wallBack = new THREE.Mesh(new THREE.PlaneGeometry(110, 14), wallMat);
+        wallBack.position.set(0, 7, -40); scene.add(wallBack);
+        const wallLeft = new THREE.Mesh(new THREE.PlaneGeometry(80, 14), wallMat);
+        wallLeft.rotation.y = Math.PI / 2; wallLeft.position.set(-55, 7, 0); scene.add(wallLeft);
+        const wallRight = new THREE.Mesh(new THREE.PlaneGeometry(80, 14), wallMat);
+        wallRight.rotation.y = -Math.PI / 2; wallRight.position.set(55, 7, 0); scene.add(wallRight);
+
+        // ---------- Build a HNK NET75 style vertical lathe ----------
+        // Stylized representation: heavy base cabinet, large horizontal chuck table on top of base,
+        // tall vertical column at the back, cross-rail with vertical tool slide (ram), control pendant on the side.
+        const machinesGroup = new THREE.Group();
+        scene.add(machinesGroup);
+
+        const machines = []; // array of machine objects with {group, parts, id, name, items, count}
+
+        function makeLabelTexture(text, sub) {
+            const canvasEl = document.createElement('canvas');
+            canvasEl.width = 320; canvasEl.height = 96;
+            const ctx = canvasEl.getContext('2d');
+            ctx.fillStyle = 'rgba(15,23,42,0.92)';
+            ctx.fillRect(0, 0, 320, 96);
+            ctx.strokeStyle = '#3a4a78';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(2, 2, 316, 92);
+            ctx.font = 'bold 30px Outfit, Arial, sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(text, 160, sub ? 34 : 48);
+            if (sub) {
+                ctx.font = '20px Outfit, Arial, sans-serif';
+                ctx.fillStyle = '#9ca3af';
+                ctx.fillText(sub, 160, 66);
+            }
+            const tex = new THREE.CanvasTexture(canvasEl);
+            tex.needsUpdate = true;
+            return tex;
+        }
+
+        function makeInfoTexture(machine) {
+            const W = 512, H = 256;
+            const canvasEl = document.createElement('canvas');
+            canvasEl.width = W; canvasEl.height = H;
+            const ctx = canvasEl.getContext('2d');
+
+            const cls = classifyMachine(machine);
+            const color = cls.hex;
+            const label = cls.state;
+
+            // Card background
+            ctx.fillStyle = 'rgba(15,23,42,0.95)';
+            ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 4;
+            ctx.strokeRect(2, 2, W - 4, H - 4);
+
+            // Top bar
+            ctx.fillStyle = color;
+            ctx.fillRect(2, 2, W - 4, 44);
+            ctx.font = 'bold 24px Outfit, Arial, sans-serif';
+            ctx.fillStyle = '#0b1020';
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'left';
+            ctx.fillText(machine.name, 16, 24);
+            ctx.textAlign = 'right';
+            ctx.fillText(label, W - 16, 24);
+
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+
+            if (machine.items.length === 0) {
+                ctx.fillStyle = '#9ca3af';
+                ctx.font = '500 22px Outfit, Arial, sans-serif';
+                ctx.fillText('No active operation', 18, 80);
+                ctx.font = '500 18px Outfit, Arial, sans-serif';
+                ctx.fillText('Awaiting work', 18, 120);
+            } else {
+                // Show oldest item (the one that's been running longest)
+                const item = machine.items.reduce((a, b) =>
+                    new Date(a.createdAt) < new Date(b.createdAt) ? a : b
+                );
+                const opName = operatorMap[item.badgeNumber] || item.badgeNumber;
+
+                // OPERATOR
+                ctx.fillStyle = '#9ca3af';
+                ctx.font = '500 14px Outfit, Arial, sans-serif';
+                ctx.fillText('OPERATOR', 18, 58);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 22px Outfit, Arial, sans-serif';
+                ctx.fillText(opName, 18, 78);
+
+                // PART
+                ctx.fillStyle = '#9ca3af';
+                ctx.font = '500 14px Outfit, Arial, sans-serif';
+                ctx.fillText('PART', 18, 112);
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = 'bold 22px Outfit, Arial, sans-serif';
+                ctx.fillText(item.part, 18, 132);
+
+                // OP
+                ctx.fillStyle = '#9ca3af';
+                ctx.font = '500 14px Outfit, Arial, sans-serif';
+                ctx.fillText('OP', 290, 112);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 22px Outfit, Arial, sans-serif';
+                ctx.fillText(item.opNumber, 290, 132);
+
+                // SERIAL
+                ctx.fillStyle = '#9ca3af';
+                ctx.font = '500 14px Outfit, Arial, sans-serif';
+                ctx.fillText('SERIAL', 18, 166);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 22px Outfit, Arial, sans-serif';
+                ctx.fillText(item.serial, 18, 186);
+
+                // ELAPSED
+                const ageMs = Date.now() - new Date(item.createdAt).getTime();
+                ctx.fillStyle = '#9ca3af';
+                ctx.font = '500 14px Outfit, Arial, sans-serif';
+                ctx.fillText('ELAPSED', 290, 166);
+                ctx.fillStyle = color;
+                ctx.font = 'bold 26px Outfit, Arial, sans-serif';
+                ctx.fillText(formatElapsed(ageMs), 290, 186);
+
+                if (machine.items.length > 1) {
+                    ctx.fillStyle = '#9ca3af';
+                    ctx.font = '500 13px Outfit, Arial, sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.fillText(`+${machine.items.length - 1} queued`, W - 16, 226);
+                    ctx.textAlign = 'left';
+                }
+            }
+
+            const tex = new THREE.CanvasTexture(canvasEl);
+            tex.needsUpdate = true;
+            return { texture: tex, color: cls.color, hex: color, state: label };
+        }
+
+        function buildMachine(id, name) {
+            const g = new THREE.Group();
+
+            // Box dimensions
+            const W = 5.0;   // width  (X)
+            const H = 5.0;   // height (Y)
+            const D = 4.5;   // depth  (Z)
+
+            // Floor pad
+            const padMat = new THREE.MeshStandardMaterial({ color: 0x374151, roughness: 0.85 });
+            const pad = new THREE.Mesh(new THREE.BoxGeometry(W + 0.6, 0.15, D + 0.6), padMat);
+            pad.position.y = 0.075;
+            pad.receiveShadow = true;
+            g.add(pad);
+
+            // Main enclosure (the BODY - opaque sheet metal)
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xe5e7eb, roughness: 0.55, metalness: 0.35 });
+            const body = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), bodyMat);
+            body.position.set(0, 0.15 + H / 2, 0);
+            body.castShadow = true; body.receiveShadow = true;
+            g.add(body);
+
+            // Top accent strip (the dark band across the upper part of the enclosure)
+            const accentMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.6, metalness: 0.4 });
+            const accent = new THREE.Mesh(new THREE.BoxGeometry(W + 0.02, 0.7, D + 0.02), accentMat);
+            accent.position.set(0, 0.15 + H - 0.55, 0);
+            g.add(accent);
+
+            // Front sliding door — slightly recessed
+            const doorMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.5, metalness: 0.4 });
+            const door = new THREE.Mesh(new THREE.BoxGeometry(W * 0.7, H * 0.6, 0.08), doorMat);
+            door.position.set(0, 0.15 + H * 0.45, D / 2 + 0.04);
+            g.add(door);
+
+            // Door window (tinted glass)
+            const windowMat = new THREE.MeshStandardMaterial({
+                color: 0x1e3a5f, roughness: 0.15, metalness: 0.5,
+                transparent: true, opacity: 0.55, emissive: 0x000000, emissiveIntensity: 0
+            });
+            const windowPane = new THREE.Mesh(new THREE.PlaneGeometry(W * 0.55, H * 0.32), windowMat);
+            windowPane.position.set(0, 0.15 + H * 0.55, D / 2 + 0.09);
+            g.add(windowPane);
+
+            // Window frame
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.45, metalness: 0.6 });
+            const frameTop = new THREE.Mesh(new THREE.BoxGeometry(W * 0.58, 0.08, 0.06), frameMat);
+            frameTop.position.set(0, 0.15 + H * 0.55 + H * 0.16 + 0.04, D / 2 + 0.09);
+            g.add(frameTop);
+            const frameBot = new THREE.Mesh(new THREE.BoxGeometry(W * 0.58, 0.08, 0.06), frameMat);
+            frameBot.position.set(0, 0.15 + H * 0.55 - H * 0.16 - 0.04, D / 2 + 0.09);
+            g.add(frameBot);
+            const frameL = new THREE.Mesh(new THREE.BoxGeometry(0.08, H * 0.32, 0.06), frameMat);
+            frameL.position.set(-W * 0.275, 0.15 + H * 0.55, D / 2 + 0.09);
+            g.add(frameL);
+            const frameR = new THREE.Mesh(new THREE.BoxGeometry(0.08, H * 0.32, 0.06), frameMat);
+            frameR.position.set(W * 0.275, 0.15 + H * 0.55, D / 2 + 0.09);
+            g.add(frameR);
+
+            // Door split line
+            const splitMat = new THREE.MeshBasicMaterial({ color: 0x374151 });
+            const split = new THREE.Mesh(new THREE.PlaneGeometry(0.04, H * 0.6), splitMat);
+            split.position.set(0, 0.15 + H * 0.45, D / 2 + 0.085);
+            g.add(split);
+
+            // Door handle
+            const handleMat = new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.7, roughness: 0.3 });
+            const handle = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.12), handleMat);
+            handle.position.set(W * 0.18, 0.15 + H * 0.3, D / 2 + 0.12);
+            g.add(handle);
+
+            // Workpiece visible THROUGH the window when running (placed inside the box behind the window)
+            const wpMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.45, metalness: 0.6, emissive: 0xfbbf24, emissiveIntensity: 0.15 });
+            const workpiece = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.5, 0.9, 16), wpMat);
+            workpiece.position.set(0, 0.15 + H * 0.45, D / 2 - 0.5);
+            workpiece.visible = false;
+            g.add(workpiece);
+
+            // Control pendant on the right-front corner — articulated arm + box screen
+            const pendMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.4, metalness: 0.5 });
+            const pendantArm = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.8), pendMat);
+            pendantArm.position.set(W / 2 + 0.45, 0.15 + H * 0.6, D / 2 - 0.25);
+            g.add(pendantArm);
+            const pendant = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.1, 0.25), pendMat);
+            pendant.position.set(W / 2 + 0.85, 0.15 + H * 0.6, D / 2 - 0.25);
+            pendant.castShadow = true;
+            g.add(pendant);
+            // Screen on pendant
+            const screenMat = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x10b981, emissiveIntensity: 0.7 });
+            const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.55), screenMat);
+            screen.position.set(W / 2 + 0.985, 0.15 + H * 0.65, D / 2 - 0.25);
+            screen.rotation.y = Math.PI / 2;
+            g.add(screen);
+
+            // Coolant / chip conveyor box on the back-left corner (just visual mass)
+            const auxMat = new THREE.MeshStandardMaterial({ color: 0xb8bcc4, roughness: 0.6, metalness: 0.3 });
+            const aux = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 1.0), auxMat);
+            aux.position.set(-W / 2 - 0.65, 0.15 + 0.8, -D / 2 + 0.5);
+            aux.castShadow = true;
+            g.add(aux);
+
+            // Andon stack light - mast on top of enclosure
+            const stackMastMat = new THREE.MeshStandardMaterial({ color: 0x4b5563, roughness: 0.5, metalness: 0.4 });
+            const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.6, 12), stackMastMat);
+            mast.position.set(W / 2 - 0.5, 0.15 + H + 0.3, -D / 2 + 0.5);
+            g.add(mast);
+            // Stack light dome
+            const lightMat = new THREE.MeshStandardMaterial({
+                color: 0x10b981, emissive: 0x10b981, emissiveIntensity: 1.0,
+                transparent: true, opacity: 0.95
+            });
+            const stackLight = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.55, 16), lightMat);
+            stackLight.position.set(W / 2 - 0.5, 0.15 + H + 0.85, -D / 2 + 0.5);
+            g.add(stackLight);
+            const stackTop = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), lightMat);
+            stackTop.position.set(W / 2 - 0.5, 0.15 + H + 1.13, -D / 2 + 0.5);
+            g.add(stackTop);
+
+            // Vent grille on back panel (cosmetic)
+            const ventMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.7 });
+            const vent = new THREE.Mesh(new THREE.PlaneGeometry(W * 0.5, H * 0.25), ventMat);
+            vent.position.set(0, 0.15 + H * 0.35, -D / 2 - 0.01);
+            vent.rotation.y = Math.PI;
+            g.add(vent);
+
+            // Brand label on front (above the window/door)
+            const brandTex = makeLabelTexture('HNK', 'NET75');
+            const brandMat = new THREE.MeshBasicMaterial({ map: brandTex, transparent: true });
+            const brand = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.75), brandMat);
+            brand.position.set(0, 0.15 + H - 0.55, D / 2 + 0.06);
+            g.add(brand);
+
+            // Big info card sprite floating above the machine
+            // (texture filled later in setMachineStatus / refresh)
+            const infoMat = new THREE.SpriteMaterial({ transparent: true, depthTest: false });
+            const infoSprite = new THREE.Sprite(infoMat);
+            infoSprite.position.set(0, 0.15 + H + 2.6, 0);
+            infoSprite.scale.set(6.0, 3.0, 1);
+            infoSprite.renderOrder = 999;
+            g.add(infoSprite);
+
+            const machine = {
+                id, name, group: g,
+                parts: {
+                    base: body, baseMat: bodyMat,
+                    column: door,
+                    ram: door,
+                    chuck: workpiece,
+                    tableBody: workpiece,
+                    workpiece, windowMat,
+                    stackLight, lightMat,
+                    screen, screenMat,
+                    infoSprite, infoMat
+                },
+                items: [], count: 0
+            };
+            return machine;
+        }
+
+        function setMachineStatus(m) {
+            m.count = m.items.length;
+            const cls = classifyMachine(m);
+            const color = cls.color;
+
+            // Stack light + pendant screen
+            m.parts.lightMat.color.setHex(color);
+            m.parts.lightMat.emissive.setHex(color);
+            m.parts.screenMat.color.setHex(color);
+            m.parts.screenMat.emissive.setHex(color);
+
+            // Window interior glow if active or paused (anything not idle)
+            if (m.parts.windowMat) {
+                if (cls.state === 'ACTIVE') {
+                    m.parts.windowMat.emissive.setHex(0xfbbf24);
+                    m.parts.windowMat.emissiveIntensity = 0.4;
+                } else if (cls.state === 'PAUSED') {
+                    m.parts.windowMat.emissive.setHex(0xef4444);
+                    m.parts.windowMat.emissiveIntensity = 0.25;
+                } else {
+                    m.parts.windowMat.emissive.setHex(0x000000);
+                    m.parts.windowMat.emissiveIntensity = 0;
+                }
+            }
+
+            // Subtle body tint
+            if (cls.state !== 'IDLE') {
+                m.parts.baseMat.emissive.setHex(color);
+                m.parts.baseMat.emissiveIntensity = 0.04;
+            } else {
+                m.parts.baseMat.emissive.setHex(0x000000);
+                m.parts.baseMat.emissiveIntensity = 0;
+            }
+
+            // Workpiece visible only when actively running (not idle, not paused-stale)
+            m.parts.workpiece.visible = cls.state === 'ACTIVE';
+
+            // Refresh info card texture
+            const result = makeInfoTexture(m);
+            if (m.parts.infoMat.map) m.parts.infoMat.map.dispose();
+            m.parts.infoMat.map = result.texture;
+            m.parts.infoMat.needsUpdate = true;
+
+            m.state = cls.state;
+        }
+
+        // Layout: 2 rows of 6 machines.
+        // Row spacing along Z, machine spacing along X.
+        const ROWS = 2;
+        const COLS = 6;
+        const SPACING_X = 8.5;
+        const ROW_Z = 14; // distance from center for each row (front/back)
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const idx = r * COLS + c;
+                const id = `NET75-${String(idx + 1).padStart(2, '0')}`;
+                const m = buildMachine(idx + 1, id);
+                const x = -((COLS - 1) * SPACING_X) / 2 + c * SPACING_X;
+                const z = r === 0 ? -ROW_Z : ROW_Z;
+                m.group.position.set(x, 0, z);
+                // Both rows face the central aisle (doors toward z=0)
+                m.group.rotation.y = r === 0 ? 0 : Math.PI;
+                machinesGroup.add(m.group);
+                machines.push(m);
+            }
+        }
+
+        // Initialize all idle
+        machines.forEach(m => setMachineStatus(m));
+
+        // ---------- Data ----------
+        async function fetchOperators() {
+            try {
+                const res = await fetch(`${MASTER_API_BASE}/operators`);
+                if (res.ok) {
+                    const ops = await res.json();
+                    operatorMap = {};
+                    ops.forEach(o => { operatorMap[o.badgeNumber] = o.name; });
+                }
+            } catch (e) { console.warn('operators fetch failed', e); }
+        }
+
+        async function fetchActiveItems() {
+            try {
+                const res = await fetch(`${API_BASE}/active`);
+                if (res.ok) return await res.json();
+            } catch (e) { console.warn('active fetch failed', e); }
+            return [];
+        }
+
+        function distributeItems(items) {
+            // Reset all
+            machines.forEach(m => { m.items = []; });
+
+            // Group items by opNumber and distribute the unique ops across machines deterministically.
+            const opMap = {};
+            items.forEach(it => {
+                if (!opMap[it.opNumber]) opMap[it.opNumber] = [];
+                opMap[it.opNumber].push(it);
+            });
+
+            const opNumbers = Object.keys(opMap).sort();
+            opNumbers.forEach((op, i) => {
+                const machineIdx = i % machines.length;
+                opMap[op].forEach(it => machines[machineIdx].items.push(it));
+            });
+
+            machines.forEach(m => setMachineStatus(m));
+
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+        }
+
+        async function refresh() {
+            const [items] = await Promise.all([fetchActiveItems()]);
+            distributeItems(items);
+        }
+
+        // Refresh elapsed time every second so the timer ticks
+        setInterval(() => {
+            machines.forEach(m => {
+                if (m.items.length > 0) {
+                    const result = makeInfoTexture(m);
+                    if (m.parts.infoMat.map) m.parts.infoMat.map.dispose();
+                    m.parts.infoMat.map = result.texture;
+                    m.parts.infoMat.needsUpdate = true;
+                }
+            });
+        }, 1000);
+
+        // ---------- Camera Controls (orbit + zoom) ----------
+        const target = new THREE.Vector3(0, 2, 0);
+        let isDragging = false, lastX = 0, lastY = 0;
+        let yaw = 0, pitch = -0.5, distance = 60;
+
+        function applyCamera() {
+            const cx = target.x + distance * Math.cos(pitch) * Math.sin(yaw);
+            const cy = target.y + distance * Math.sin(-pitch);
+            const cz = target.z + distance * Math.cos(pitch) * Math.cos(yaw);
+            camera.position.set(cx, Math.max(2, cy), cz);
+            camera.lookAt(target);
+        }
+        applyCamera();
+
+        canvas.addEventListener('mousedown', e => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        window.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const dx = e.clientX - lastX; const dy = e.clientY - lastY;
+            lastX = e.clientX; lastY = e.clientY;
+            yaw -= dx * 0.005;
+            pitch = Math.max(-1.4, Math.min(-0.05, pitch + dy * 0.005));
+            applyCamera();
+        });
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            distance = Math.max(20, Math.min(120, distance + e.deltaY * 0.05));
+            applyCamera();
+        }, { passive: false });
+
+        // ---------- Hover ----------
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        canvas.addEventListener('mousemove', e => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            // Hit-test bases + columns of all machines
+            const targets = [];
+            machines.forEach(m => { targets.push(m.parts.base, m.parts.column); });
+            const hits = raycaster.intersectObjects(targets, false);
+            if (hits.length > 0) {
+                // Find the parent machine
+                let obj = hits[0].object;
+                let machine = null;
+                for (const m of machines) {
+                    if (m.parts.base === obj || m.parts.column === obj) { machine = m; break; }
+                }
+                if (machine) {
+                    hoverPanel.style.display = 'block';
+                    hoverPanel.style.left = (e.clientX - rect.left + 12) + 'px';
+                    hoverPanel.style.top = (e.clientY - rect.top + 12) + 'px';
+                    let html = `<div style="font-weight:600;margin-bottom:4px;">${machine.name}</div>`;
+                    html += `<div style="opacity:0.7;font-size:0.8rem;margin-bottom:6px;">HNK NET75 Vertical Lathe</div>`;
+                    html += `<div>WIP: <strong>${machine.count}</strong></div>`;
+                    if (machine.items.length > 0) {
+                        html += `<div style="margin-top:6px;border-top:1px solid #2a334d;padding-top:6px;font-size:0.8rem;opacity:0.85;">`;
+                        machine.items.slice(0, 5).forEach(it => {
+                            html += `<div>Op ${it.opNumber} · ${it.part} · SN ${it.serial}</div>`;
+                        });
+                        if (machine.items.length > 5) html += `<div style="opacity:0.6;">+ ${machine.items.length - 5} more...</div>`;
+                        html += `</div>`;
+                    }
+                    hoverPanel.innerHTML = html;
+                    return;
+                }
+            }
+            hoverPanel.style.display = 'none';
+        });
+        canvas.addEventListener('mouseleave', () => { hoverPanel.style.display = 'none'; });
+
+        // ---------- Resize ----------
+        function onResize() {
+            const w = root.clientWidth; const h = root.clientHeight;
+            camera.aspect = w / h; camera.updateProjectionMatrix();
+            renderer.setSize(w, h, false);
+        }
+        window.addEventListener('resize', onResize);
+
+        // ---------- Animation loop ----------
+        const clock = new THREE.Clock();
+        function animate() {
+            const t = clock.getElapsedTime();
+            machines.forEach((m, i) => {
+                if (m.count > 0) {
+                    // Spin the workpiece visible through the window
+                    m.parts.workpiece.rotation.y += 0.05;
+                    // Pulse stack light
+                    m.parts.lightMat.emissiveIntensity = 0.65 + 0.35 * Math.sin(t * 3 + i);
+                    // Pulse interior window glow slightly
+                    if (m.parts.windowMat) {
+                        m.parts.windowMat.emissiveIntensity = 0.3 + 0.15 * Math.sin(t * 4 + i);
+                    }
+                } else {
+                    m.parts.lightMat.emissiveIntensity = 0.3;
+                }
+            });
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // ---------- SignalR ----------
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl(window.AppConfig.hubUrl)
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("UpdateDashboard", async function () {
+            await refresh();
+            showToast('Live update received', 'success');
+        });
+
+        connection.onreconnecting(() => {
+            document.getElementById('connStatus').style.color = '#f59e0b';
+            document.getElementById('connText').textContent = 'Reconnecting...';
+        });
+        connection.onreconnected(() => {
+            document.getElementById('connStatus').style.color = '#10b981';
+            document.getElementById('connText').textContent = 'Live';
+        });
+        connection.onclose(() => {
+            document.getElementById('connStatus').style.color = '#ef4444';
+            document.getElementById('connText').textContent = 'Disconnected';
+        });
+
+        async function startSignalR() {
+            try {
+                await connection.start();
+                document.getElementById('connStatus').style.color = '#10b981';
+                document.getElementById('connText').textContent = 'Live';
+            } catch (err) {
+                document.getElementById('connStatus').style.color = '#ef4444';
+                document.getElementById('connText').textContent = 'Disconnected';
+                setTimeout(startSignalR, 5000);
+            }
+        }
+
+        // ---------- Init ----------
+        document.addEventListener('DOMContentLoaded', async () => {
+            onResize();
+            await fetchOperators();
+            await refresh();
+            startSignalR();
+        });
+    </script>
+}

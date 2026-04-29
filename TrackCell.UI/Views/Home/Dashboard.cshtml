@@ -19,7 +19,8 @@
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <script>
-        const API_BASE = 'http://localhost:5016/api/workitems';
+        // URLs are loaded from window.AppConfig (injected by _Layout from appsettings.json).
+        const API_BASE = window.AppConfig.workItems;
 
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
@@ -119,7 +120,7 @@
 
         // Initialize connection
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("http://localhost:5016/dashboardHub")
+            .withUrl(window.AppConfig.hubUrl)
             .withAutomaticReconnect()
             .build();
 
