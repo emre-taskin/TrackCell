@@ -1,41 +1,67 @@
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TrackCell.Api.Data;
+using TrackCell.Api.Models;
+using TrackCell.Api.Services;
 
 namespace TrackCell.Api.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class MasterDataController : ControllerBase
     {
         private readonly AppDbContext _dbContext;
+        private readonly MasterDataService _masterDataService;
 
-        public MasterDataController(AppDbContext dbContext)
+        public MasterDataController(AppDbContext dbContext, MasterDataService masterDataService)
         {
             _dbContext = dbContext;
+            _masterDataService = masterDataService;
         }
 
         [HttpGet("operators")]
         public async Task<IActionResult> GetOperators()
         {
-            var data = await _dbContext.Operators.OrderBy(x => x.Name).ToListAsync();
-            return Ok(data);
+            var data = await _dbContext.Operators.OrderBy(x => x.Name)
+                .Select(x => new OperatorDto { BadgeNumber = x.BadgeNumber, Name = x.Name })
+                .ToListAsync();
+            var result = new ResultDto<IEnumerable<OperatorDto>> { Data = data };
+            return Ok(result);
         }
 
         [HttpGet("parts")]
         public async Task<IActionResult> GetParts()
         {
-            var data = await _dbContext.PartDefinitions.OrderBy(x => x.PartNumber).ToListAsync();
-            return Ok(data);
+            var data = await _dbContext.PartDefinitions.OrderBy(x => x.PartNumber)
+                .Select(x => new PartDefinitionDto { PartNumber = x.PartNumber, Description = x.Description })
+                .ToListAsync();
+            var result = new ResultDto<IEnumerable<PartDefinitionDto>> { Data = data };
+            return Ok(result);
         }
 
         [HttpGet("operations")]
         public async Task<IActionResult> GetOperations()
         {
-            var data = await _dbContext.OperationDefinitions.OrderBy(x => x.OpNumber).ToListAsync();
-            return Ok(data);
+            var data = await _dbContext.OperationDefinitions.OrderBy(x => x.OpNumber)
+                .Select(x => new OperationDefinitionDto { PartNumber = x.PartNumber, OpNumber = x.OpNumber, Description = x.Description })
+                .ToListAsync();
+            var result = new ResultDto<IEnumerable<OperationDefinitionDto>> { Data = data };
+            return Ok(result);
+        }
+
+        [HttpGet("getOperationsByPart")]
+        public async Task<IActionResult> GetOperationsByPart([FromQuery] string partNumber)
+        {
+            var operations = await _masterDataService.GetOperationsByPartAsync(partNumber);
+            var result = new ResultDto<IEnumerable<OperationDefinitionDto>>
+            {
+                Data = operations
+            };
+            return Ok(result);
         }
 
         // Lookup a single operator by badge number (used by barcode scan on Operator Entry).
@@ -45,7 +71,12 @@ namespace TrackCell.Api.Controllers
             var op = await _dbContext.Operators
                 .FirstOrDefaultAsync(x => x.BadgeNumber == badgeNumber);
             if (op == null) return NotFound();
-            return Ok(op);
+
+            var result = new ResultDto<OperatorDto>
+            {
+                Data = new OperatorDto { BadgeNumber = op.BadgeNumber, Name = op.Name }
+            };
+            return Ok(result);
         }
 
         // Lookup a serial number in operation history.
@@ -82,14 +113,18 @@ namespace TrackCell.Api.Controllers
                 .Where(op => !completedOps.Contains(op))
                 .ToList();
 
-            return Ok(new
+            var result = new ResultDto<object>
             {
-                SerialNumber = serialNumber,
-                PartNumber = partNumber,
-                PartDescription = part?.Description ?? "",
-                CompletedOps = completedOps,
-                InProcessOps = startedOps
-            });
+                Data = new
+                {
+                    SerialNumber = serialNumber,
+                    PartNumber = partNumber,
+                    PartDescription = part?.Description ?? "",
+                    CompletedOps = completedOps,
+                    InProcessOps = startedOps
+                }
+            };
+            return Ok(result);
         }
     }
 }
