@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using StackExchange.Redis;
 using TrackCell.Api.Hubs;
 using TrackCell.Api.Services;
+using Microsoft.AspNetCore.Authentication.Negotiate;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,15 +17,19 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Conn
 // Add services to the container.
 builder.Services.AddControllers();
 
+// Add NTLM Authentication
+builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
+    .AddNegotiate();
+
 // Add SignalR
 builder.Services.AddSignalR();
 
-// Add CORS policy - Setup for SignalR
+// Add CORS policy
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("AllowSpecific", policy =>
     {
-        policy.SetIsOriginAllowed(origin => true)
+        policy.WithOrigins("https://localhost:7263", "http://localhost:5144", "http://localhost:3000")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -44,6 +49,10 @@ builder.Services.AddDbContext<TrackCell.Api.Data.AppDbContext>(options =>
 // Register the WorkItem service as Scoped since DbContext is Scoped
 builder.Services.AddScoped<WorkItemService>();
 
+// Register Repository and Service
+builder.Services.AddScoped<OperationDefinitionRepository>();
+builder.Services.AddScoped<MasterDataService>();
+
 var app = builder.Build();
 
 // Apply any pending migrations automatically on startup
@@ -60,10 +69,11 @@ if (app.Environment.IsDevelopment())
 }
 
 // Enable CORS
-app.UseCors("AllowAll");
+app.UseCors("AllowSpecific");
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

@@ -20,7 +20,7 @@ namespace TrackCell.Api.Controllers
         public async Task<IActionResult> GetActiveWorkItems()
         {
             var items = await _workItemService.GetActiveWorkItemsAsync();
-            return Ok(items);
+            return Ok(new ResultDto<IEnumerable<WorkItem>> { Data = items });
         }
 
         [HttpPost("start")]
@@ -31,11 +31,11 @@ namespace TrackCell.Api.Controllers
                 string.IsNullOrWhiteSpace(item.Serial) ||
                 string.IsNullOrWhiteSpace(item.OpNumber))
             {
-                return BadRequest("All properties (BadgeNumber, Part, Serial, OpNumber) are required.");
+                return BadRequest(new ResultDto<object> { Success = false, Message = "All properties (BadgeNumber, Part, Serial, OpNumber) are required." });
             }
 
             var createdItem = await _workItemService.StartOperationAsync(item);
-            return Ok(createdItem);
+            return Ok(new ResultDto<WorkItem> { Data = createdItem });
         }
 
         [HttpPost("complete")]
@@ -45,15 +45,15 @@ namespace TrackCell.Api.Controllers
                 string.IsNullOrWhiteSpace(request.Serial) ||
                 string.IsNullOrWhiteSpace(request.OpNumber))
             {
-                return BadRequest("Part, Serial, and OpNumber are required.");
+                return BadRequest(new ResultDto<object> { Success = false, Message = "Part, Serial, and OpNumber are required." });
             }
 
             var success = await _workItemService.CompleteOperationAsync(request.Part, request.Serial, request.OpNumber, request.BadgeNumber);
             if (success)
             {
-                return Ok(new { Message = "Operation completed successfully." });
+                return Ok(new ResultDto<object> { Message = "Operation completed successfully." });
             }
-            return NotFound("Active work item not found.");
+            return NotFound(new ResultDto<object> { Success = false, Message = "Active work item not found." });
         }
     }
 

@@ -32,11 +32,11 @@ namespace TrackCell.Api.Data
             );
 
             modelBuilder.Entity<OperationDefinition>().HasData(
-                new OperationDefinition { Id = 1, OpNumber = "OP-10", Description = "Machining" },
-                new OperationDefinition { Id = 2, OpNumber = "OP-20", Description = "Sub-Assembly" },
-                new OperationDefinition { Id = 3, OpNumber = "OP-30", Description = "Primary Assembly" },
-                new OperationDefinition { Id = 4, OpNumber = "OP-40", Description = "Testing and QA" },
-                new OperationDefinition { Id = 5, OpNumber = "OP-50", Description = "Packaging" }
+                new OperationDefinition { Id = 1, PartNumber = "PRT-001X", OpNumber = "OP-10", Description = "Machining" },
+                new OperationDefinition { Id = 2, PartNumber = "PRT-001X", OpNumber = "OP-20", Description = "Sub-Assembly" },
+                new OperationDefinition { Id = 3, PartNumber = "PRT-002Y", OpNumber = "OP-30", Description = "Primary Assembly" },
+                new OperationDefinition { Id = 4, PartNumber = "PRT-003Z", OpNumber = "OP-40", Description = "Testing and QA" },
+                new OperationDefinition { Id = 5, PartNumber = "PRT-004A", OpNumber = "OP-50", Description = "Packaging" }
             );
         }
     }

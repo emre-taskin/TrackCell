@@ -37,6 +37,10 @@ namespace TrackCell.Api.Models
         public int Id { get; set; }
 
         [Required]
+        [MaxLength(100)]
+        public string PartNumber { get; set; } = string.Empty;
+
+        [Required]
         [MaxLength(50)]
         public string OpNumber { get; set; } = string.Empty;
 

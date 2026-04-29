@@ -168,11 +168,17 @@
         async function loadMasterData() {
             try {
                 const [pRes, oRes] = await Promise.all([
-                    fetch(`${MASTER_API_BASE}/parts`),
-                    fetch(`${MASTER_API_BASE}/operations`)
+                    fetch(`${MASTER_API_BASE}/parts`, { credentials: 'include' }),
+                    fetch(`${MASTER_API_BASE}/operations`, { credentials: 'include' })
                 ]);
-                if (pRes.ok) state.allParts = await pRes.json();
-                if (oRes.ok) state.allOps = await oRes.json();
+                if (pRes.ok) {
+                    const result = await pRes.json();
+                    state.allParts = result.data;
+                }
+                if (oRes.ok) {
+                    const result = await oRes.json();
+                    state.allOps = result.data;
+                }
             } catch (e) { console.warn('master data load failed', e); }
         }
 
@@ -182,7 +188,7 @@
             info.style.color = 'var(--text-secondary)';
             info.textContent = 'Looking up badge...';
             try {
-                const res = await fetch(`${MASTER_API_BASE}/operators/${encodeURIComponent(badge)}`);
+                const res = await fetch(`${MASTER_API_BASE}/operators/${encodeURIComponent(badge)}`, { credentials: 'include' });
                 if (res.status === 404) {
                     info.style.color = 'var(--danger-color, #ef4444)';
                     info.textContent = `Unknown badge: ${badge}`;
@@ -190,7 +196,8 @@
                     return false;
                 }
                 if (!res.ok) throw new Error('lookup failed');
-                state.operator = await res.json();
+                const result = await res.json();
+                state.operator = result.data;
                 info.style.color = 'var(--success-color, #10b981)';
                 info.innerHTML = `<strong>${state.operator.name}</strong> (${state.operator.badgeNumber})`;
                 setStepBadgeState(2, 'active');
@@ -222,7 +229,7 @@
             info.style.color = 'var(--text-secondary)';
             info.textContent = 'Looking up serial...';
             try {
-                const res = await fetch(`${MASTER_API_BASE}/serial/${encodeURIComponent(serial)}`);
+                const res = await fetch(`${MASTER_API_BASE}/serial/${encodeURIComponent(serial)}`, { credentials: 'include' });
                 if (res.status === 404) {
                     // Serial not found — operator must pick the part manually.
                     state.serialHistory = null;
@@ -232,7 +239,8 @@
                     return true;
                 }
                 if (!res.ok) throw new Error('serial lookup failed');
-                state.serialHistory = await res.json();
+                const result = await res.json();
+                state.serialHistory = result.data;
                 info.style.color = 'var(--success-color, #10b981)';
                 const completedTxt = state.serialHistory.completedOps.length
                     ? ` · Completed: ${state.serialHistory.completedOps.join(', ')}`
@@ -281,28 +289,41 @@
             partEl.focus();
         }
 
-        function populateOpsForPart(serialHistory) {
+        async function populateOpsForPart(serialHistory) {
             const opEl = document.getElementById('opNumber');
-            opEl.innerHTML = '<option value="">Select Operation...</option>';
-            const completed = serialHistory ? new Set(serialHistory.completedOps) : new Set();
-            const inProcess = serialHistory ? new Set(serialHistory.inProcessOps) : new Set();
+            opEl.innerHTML = '<option value="">Loading operations...</option>';
+            const partNumber = document.getElementById('part').value;
 
-            // First non-completed, non-in-process op = next suggested op
-            let suggestedIdx = -1;
-            state.allOps.forEach((o, i) => {
-                let label = `${o.description} (${o.opNumber})`;
-                if (completed.has(o.opNumber)) label = '✓ ' + label + ' — done';
-                else if (inProcess.has(o.opNumber)) label = '⏳ ' + label + ' — in process';
-                else if (suggestedIdx === -1) { suggestedIdx = i; label = '▶ ' + label; }
-                const opt = new Option(label, o.opNumber);
-                if (completed.has(o.opNumber)) opt.disabled = true;
-                opEl.add(opt);
-            });
-            opEl.disabled = false;
-            if (suggestedIdx >= 0) opEl.selectedIndex = suggestedIdx + 1; // +1 for placeholder
-            setStepBadgeState(4, 'active');
-            document.getElementById('startBtn').disabled = false;
-            opEl.focus();
+            try {
+                const res = await fetch(`${MASTER_API_BASE}/getOperationsByPart?partNumber=${encodeURIComponent(partNumber)}`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to fetch operations');
+                const result = await res.json();
+                const partOps = result.data;
+
+                opEl.innerHTML = '<option value="">Select Operation...</option>';
+                const completed = serialHistory ? new Set(serialHistory.completedOps) : new Set();
+                const inProcess = serialHistory ? new Set(serialHistory.inProcessOps) : new Set();
+
+                // First non-completed, non-in-process op = next suggested op
+                let suggestedIdx = -1;
+                partOps.forEach((o, i) => {
+                    let label = `${o.description} (${o.opNumber})`;
+                    if (completed.has(o.opNumber)) label = '✓ ' + label + ' — done';
+                    else if (inProcess.has(o.opNumber)) label = '⏳ ' + label + ' — in process';
+                    else if (suggestedIdx === -1) { suggestedIdx = i; label = '▶ ' + label; }
+                    const opt = new Option(label, o.opNumber);
+                    if (completed.has(o.opNumber)) opt.disabled = true;
+                    opEl.add(opt);
+                });
+                opEl.disabled = false;
+                if (suggestedIdx >= 0) opEl.selectedIndex = suggestedIdx + 1; // +1 for placeholder
+                setStepBadgeState(4, 'active');
+                document.getElementById('startBtn').disabled = false;
+                opEl.focus();
+            } catch (e) {
+                console.error(e);
+                opEl.innerHTML = '<option value="">Error loading operations</option>';
+            }
         }
 
         document.getElementById('serial').addEventListener('keydown', async (e) => {
@@ -315,11 +336,11 @@
         });
 
         // If user manually picks a part (no history), populate ops for that part
-        document.getElementById('part').addEventListener('change', () => {
+        document.getElementById('part').addEventListener('change', async () => {
             const v = document.getElementById('part').value;
             if (!v) return;
             setStepBadgeState(3, 'done');
-            populateOpsForPart(null);
+            await populateOpsForPart(null);
         });
 
         document.getElementById('opNumber').addEventListener('change', () => {
@@ -349,6 +370,7 @@
                 const response = await fetch(`${API_BASE}/start`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify(payload)
                 });
 
@@ -356,8 +378,8 @@
                     showToast('Operation started successfully!');
                     reset();
                 } else {
-                    const text = await response.text();
-                    showToast(`Error: ${text}`, 'error');
+                    const result = await response.json();
+                    showToast(`Error: ${result.message || response.statusText}`, 'error');
                 }
             } catch (err) {
                 console.error(err);
@@ -368,8 +390,11 @@
         // --- Active items list (mostly unchanged) ---
         async function fetchActiveItems() {
             try {
-                const response = await fetch(`${API_BASE}/active`);
-                if (response.ok) renderActiveItems(await response.json());
+                const response = await fetch(`${API_BASE}/active`, { credentials: 'include' });
+                if (response.ok) {
+                    const result = await response.json();
+                    renderActiveItems(result.data);
+                }
             } catch (err) { console.error("Failed to fetch active items:", err); }
         }
 
@@ -393,6 +418,7 @@
                 const response = await fetch(`${API_BASE}/complete`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         part: pendingCompletion.part,
                         serial: pendingCompletion.serial,
@@ -404,7 +430,8 @@
                     showToast('Operation marked as completed');
                     closeModal();
                 } else {
-                    showToast('Failed to complete operation', 'error');
+                    const result = await response.json();
+                    showToast(result.message || 'Failed to complete operation', 'error');
                 }
             } catch (err) {
                 console.error(err);
