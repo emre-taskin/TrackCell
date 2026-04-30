@@ -16,14 +16,14 @@ namespace TrackCell.Api.Services
     {
         private readonly IDatabase _db;
         private readonly IHubContext<DashboardHub> _hubContext;
-        private readonly AppDbContext _dbContext;
+        private readonly OperationHistoryService _historyService;
         private const string RedisKey = "TrackCell:ActiveWorkItems";
 
-        public WorkItemService(IConnectionMultiplexer redis, IHubContext<DashboardHub> hubContext, AppDbContext dbContext)
+        public WorkItemService(IConnectionMultiplexer redis, IHubContext<DashboardHub> hubContext, OperationHistoryService historyService)
         {
             _db = redis.GetDatabase();
             _hubContext = hubContext;
-            _dbContext = dbContext;
+            _historyService = historyService;
         }
 
         public async Task<WorkItem> StartOperationAsync(WorkItem item)
@@ -33,16 +33,13 @@ namespace TrackCell.Api.Services
             item.CreatedAt = DateTime.UtcNow;
             
             // 1. Log History to Postgres
-            _dbContext.OperationHistories.Add(new OperationHistory
-            {
-                BadgeNumber = item.BadgeNumber,
-                PartNumber = item.Part,
-                SerialNumber = item.Serial,
-                OpNumber = item.OpNumber,
-                ActionLevel = "Started",
-                Timestamp = DateTime.UtcNow
-            });
-            await _dbContext.SaveChangesAsync();
+            await _historyService.LogActionAsync(
+                item.BadgeNumber,
+                item.Part,
+                item.Serial,
+                item.OpNumber,
+                "Started"
+            );
 
             // 2. Add to Redis
             var json = JsonSerializer.Serialize(item);
@@ -66,19 +63,16 @@ namespace TrackCell.Api.Services
             if (item != null)
             {
                 // 1. Log History to Postgres
-                _dbContext.OperationHistories.Add(new OperationHistory
-                {
-                    BadgeNumber = !string.IsNullOrEmpty(badgeNumber) ? badgeNumber : item.BadgeNumber,
-                    PartNumber = item.Part,
-                    SerialNumber = item.Serial,
-                    OpNumber = item.OpNumber,
-                    ActionLevel = "Completed",
-                    GoodQty = goodQty,
-                    ScrapQty = scrapQty,
-                    ScrapCode = scrapCode,
-                    Timestamp = DateTime.UtcNow
-                });
-                await _dbContext.SaveChangesAsync();
+                await _historyService.LogActionAsync(
+                    !string.IsNullOrEmpty(badgeNumber) ? badgeNumber : item.BadgeNumber,
+                    item.Part,
+                    item.Serial,
+                    item.OpNumber,
+                    "Completed",
+                    goodQty,
+                    scrapQty,
+                    scrapCode
+                );
 
                 // 2. Remove from Redis
                 await _db.HashDeleteAsync(RedisKey, item.Id.ToString());
