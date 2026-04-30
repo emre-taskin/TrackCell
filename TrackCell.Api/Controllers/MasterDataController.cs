@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TrackCell.Api.Data;
+using TrackCell.Api.Services;
 
 namespace TrackCell.Api.Controllers
 {
@@ -11,10 +12,12 @@ namespace TrackCell.Api.Controllers
     public class MasterDataController : ControllerBase
     {
         private readonly AppDbContext _dbContext;
+        private readonly OperationHistoryService _historyService;
 
-        public MasterDataController(AppDbContext dbContext)
+        public MasterDataController(AppDbContext dbContext, OperationHistoryService historyService)
         {
             _dbContext = dbContext;
+            _historyService = historyService;
         }
 
         [HttpGet("operators")]
@@ -54,42 +57,9 @@ namespace TrackCell.Api.Controllers
         [HttpGet("serial/{serialNumber}")]
         public async Task<IActionResult> GetSerialHistory(string serialNumber)
         {
-            var history = await _dbContext.OperationHistories
-                .Where(h => h.SerialNumber == serialNumber)
-                .OrderBy(h => h.Timestamp)
-                .ToListAsync();
-
-            if (history.Count == 0) return NotFound();
-
-            // Use the most recent record's part number.
-            var partNumber = history.Last().PartNumber;
-
-            var part = await _dbContext.PartDefinitions
-                .FirstOrDefaultAsync(p => p.PartNumber == partNumber);
-
-            // Completed ops = ops that have a "Completed" record for this serial.
-            var completedOps = history
-                .Where(h => h.ActionLevel == "Completed")
-                .Select(h => h.OpNumber)
-                .Distinct()
-                .ToList();
-
-            // Started ops still in process = Started without a matching Completed.
-            var startedOps = history
-                .Where(h => h.ActionLevel == "Started")
-                .Select(h => h.OpNumber)
-                .Distinct()
-                .Where(op => !completedOps.Contains(op))
-                .ToList();
-
-            return Ok(new
-            {
-                SerialNumber = serialNumber,
-                PartNumber = partNumber,
-                PartDescription = part?.Description ?? "",
-                CompletedOps = completedOps,
-                InProcessOps = startedOps
-            });
+            var history = await _historyService.GetSerialHistoryAsync(serialNumber);
+            if (history == null) return NotFound();
+            return Ok(history);
         }
     }
 }
