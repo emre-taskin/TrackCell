@@ -54,7 +54,7 @@ namespace TrackCell.Api.Services
             return item;
         }
 
-        public async Task<bool> CompleteOperationAsync(string part, string serial, string opNumber, string badgeNumber)
+        public async Task<bool> CompleteOperationAsync(string part, string serial, string opNumber, string badgeNumber, int goodQty = 0, int scrapQty = 0, string? scrapCode = null)
         {
             var activeItems = await GetActiveWorkItemsAsync();
             var item = activeItems.FirstOrDefault(w => 
@@ -73,6 +73,9 @@ namespace TrackCell.Api.Services
                     SerialNumber = item.Serial,
                     OpNumber = item.OpNumber,
                     ActionLevel = "Completed",
+                    GoodQty = goodQty,
+                    ScrapQty = scrapQty,
+                    ScrapCode = scrapCode,
                     Timestamp = DateTime.UtcNow
                 });
                 await _dbContext.SaveChangesAsync();

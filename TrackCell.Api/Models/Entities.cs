@@ -69,6 +69,13 @@ namespace TrackCell.Api.Models
         [MaxLength(20)]
         public string ActionLevel { get; set; } = string.Empty; // "Started" or "Completed"
 
+        public int GoodQty { get; set; }
+
+        public int ScrapQty { get; set; }
+
+        [MaxLength(50)]
+        public string? ScrapCode { get; set; }
+
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 }
