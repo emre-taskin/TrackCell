@@ -46,26 +46,55 @@ public class MTConnectPollingWorker : BackgroundService
                     var responseStream = await _httpClient.GetStreamAsync(machine.Url, stoppingToken);
 
                     using var xmlReader = XmlReader.Create(responseStream, new XmlReaderSettings { Async = true });
+
+                    string currentTagType = string.Empty;
+
                     while (await xmlReader.ReadAsync())
                     {
-                        if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.HasAttributes)
+                        if (xmlReader.NodeType == XmlNodeType.Element)
                         {
-                            var dataItemId = xmlReader.GetAttribute("dataItemId");
-                            var sequence = xmlReader.GetAttribute("sequence");
-                            var timestamp = xmlReader.GetAttribute("timestamp");
-
-                            if (!string.IsNullOrEmpty(dataItemId))
+                            string elementName = xmlReader.LocalName;
+                            if (elementName == "Events" || elementName == "Condition" || elementName == "Samples")
                             {
-                                await xmlReader.ReadAsync();
-                                if (xmlReader.NodeType == XmlNodeType.Text)
+                                currentTagType = elementName;
+                            }
+
+                            if (xmlReader.HasAttributes)
+                            {
+                                var dataItemId = xmlReader.GetAttribute("dataItemId");
+
+                                if (!string.IsNullOrEmpty(dataItemId))
                                 {
+                                    var sequence = xmlReader.GetAttribute("sequence") ?? string.Empty;
+                                    var timestamp = xmlReader.GetAttribute("timestamp") ?? string.Empty;
+                                    var type = xmlReader.GetAttribute("type") ?? string.Empty;
+                                    var nativeCode = xmlReader.GetAttribute("nativeCode") ?? string.Empty;
+                                    var nativeSeverity = xmlReader.GetAttribute("nativeSeverity") ?? string.Empty;
+
+                                    bool isEmpty = xmlReader.IsEmptyElement;
+                                    string value = string.Empty;
+
+                                    if (!isEmpty)
+                                    {
+                                        await xmlReader.ReadAsync();
+                                        if (xmlReader.NodeType == XmlNodeType.Text)
+                                        {
+                                            value = xmlReader.Value;
+                                        }
+                                    }
+
                                     var data = new MTConnectData
                                     {
                                         MachineName = machine.Name,
                                         DataItemId = dataItemId,
-                                        Sequence = sequence ?? string.Empty,
-                                        Timestamp = timestamp ?? string.Empty,
-                                        Value = xmlReader.Value
+                                        Sequence = sequence,
+                                        Timestamp = timestamp,
+                                        Value = value,
+                                        TagType = currentTagType,
+                                        Type = type,
+                                        NativeCode = nativeCode,
+                                        NativeSeverity = nativeSeverity,
+                                        ConditionState = currentTagType == "Condition" ? elementName : string.Empty
                                     };
 
                                     await _channelWriter.WriteAsync(data, stoppingToken);
