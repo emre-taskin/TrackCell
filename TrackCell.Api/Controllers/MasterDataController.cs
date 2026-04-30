@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using TrackCell.Api.Data;
 using TrackCell.Api.Models;
 using TrackCell.Api.Services;
+using System.Collections.Generic;
 
 namespace TrackCell.Api.Controllers
 {
@@ -16,11 +17,13 @@ namespace TrackCell.Api.Controllers
     {
         private readonly AppDbContext _dbContext;
         private readonly MasterDataService _masterDataService;
+        private readonly OperationHistoryService _historyService;
 
-        public MasterDataController(AppDbContext dbContext, MasterDataService masterDataService)
+        public MasterDataController(AppDbContext dbContext, MasterDataService masterDataService, OperationHistoryService historyService)
         {
             _dbContext = dbContext;
             _masterDataService = masterDataService;
+            _historyService = historyService;
         }
 
         [HttpGet("operators")]
@@ -85,44 +88,12 @@ namespace TrackCell.Api.Controllers
         [HttpGet("serial/{serialNumber}")]
         public async Task<IActionResult> GetSerialHistory(string serialNumber)
         {
-            var history = await _dbContext.OperationHistories
-                .Where(h => h.SerialNumber == serialNumber)
-                .OrderBy(h => h.Timestamp)
-                .ToListAsync();
+            var history = await _historyService.GetSerialHistoryAsync(serialNumber);
+            if (history == null) return NotFound();
 
-            if (history.Count == 0) return NotFound();
-
-            // Use the most recent record's part number.
-            var partNumber = history.Last().PartNumber;
-
-            var part = await _dbContext.PartDefinitions
-                .FirstOrDefaultAsync(p => p.PartNumber == partNumber);
-
-            // Completed ops = ops that have a "Completed" record for this serial.
-            var completedOps = history
-                .Where(h => h.ActionLevel == "Completed")
-                .Select(h => h.OpNumber)
-                .Distinct()
-                .ToList();
-
-            // Started ops still in process = Started without a matching Completed.
-            var startedOps = history
-                .Where(h => h.ActionLevel == "Started")
-                .Select(h => h.OpNumber)
-                .Distinct()
-                .Where(op => !completedOps.Contains(op))
-                .ToList();
-
-            var result = new ResultDto<object>
+            var result = new ResultDto<SerialHistoryDto>
             {
-                Data = new
-                {
-                    SerialNumber = serialNumber,
-                    PartNumber = partNumber,
-                    PartDescription = part?.Description ?? "",
-                    CompletedOps = completedOps,
-                    InProcessOps = startedOps
-                }
+                Data = history
             };
             return Ok(result);
         }
