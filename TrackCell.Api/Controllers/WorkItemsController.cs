@@ -48,7 +48,15 @@ namespace TrackCell.Api.Controllers
                 return BadRequest("Part, Serial, and OpNumber are required.");
             }
 
-            var success = await _workItemService.CompleteOperationAsync(request.Part, request.Serial, request.OpNumber, request.BadgeNumber);
+            var success = await _workItemService.CompleteOperationAsync(
+                request.Part,
+                request.Serial,
+                request.OpNumber,
+                request.BadgeNumber,
+                request.GoodQty,
+                request.ScrapQty,
+                request.ScrapCode);
+
             if (success)
             {
                 return Ok(new { Message = "Operation completed successfully." });
@@ -63,5 +71,8 @@ namespace TrackCell.Api.Controllers
         public string Serial { get; set; } = string.Empty;
         public string OpNumber { get; set; } = string.Empty;
         public string BadgeNumber { get; set; } = string.Empty;
+        public int GoodQty { get; set; }
+        public int ScrapQty { get; set; }
+        public string? ScrapCode { get; set; }
     }
 }

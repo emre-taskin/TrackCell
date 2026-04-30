@@ -73,10 +73,36 @@
 
 <dialog id="completionModal" class="glass-card" style="border: 1px solid var(--glass-border); margin: auto; padding: 2rem; border-radius: 16px; background: rgba(15, 23, 42, 0.95); color: var(--text-primary); max-width: 400px; width: 100%; box-shadow: var(--glass-shadow);">
     <h3 style="margin-bottom: 1rem;">Confirm Completion</h3>
-    <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Please scan or type your Badge Number to confirm.</p>
+    <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Enter production details to complete this operation.</p>
+
     <div class="form-group">
+        <label for="confirmBadge" style="font-size: 0.85rem; margin-bottom: 0.25rem; display: block;">Badge Number</label>
         <input type="text" id="confirmBadge" class="form-control" required placeholder="Scan badge..." />
     </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+        <div class="form-group">
+            <label for="goodQty" style="font-size: 0.85rem; margin-bottom: 0.25rem; display: block;">Good Qty</label>
+            <input type="number" id="goodQty" class="form-control" value="1" min="0" required />
+        </div>
+        <div class="form-group">
+            <label for="scrapQty" style="font-size: 0.85rem; margin-bottom: 0.25rem; display: block;">Scrap Qty</label>
+            <input type="number" id="scrapQty" class="form-control" value="0" min="0" required />
+        </div>
+    </div>
+
+    <div class="form-group" style="margin-top: 1rem;">
+        <label for="scrapCode" style="font-size: 0.85rem; margin-bottom: 0.25rem; display: block;">Scrap Code (Optional)</label>
+        <select id="scrapCode" class="form-control">
+            <option value="">None</option>
+            <option value="SCR-01">Material Defect</option>
+            <option value="SCR-02">Machining Error</option>
+            <option value="SCR-03">Operator Error</option>
+            <option value="SCR-04">Setup Scrap</option>
+            <option value="SCR-05">Other</option>
+        </select>
+    </div>
+
     <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
         <button type="button" class="btn" style="background: rgba(255,255,255,0.1); color: white;" onclick="closeModal()">Cancel</button>
         <button type="button" class="btn btn-primary" onclick="submitCompletion()">Complete</button>
@@ -388,7 +414,12 @@
         async function submitCompletion() {
             if (!pendingCompletion) return;
             const badge = document.getElementById('confirmBadge').value.trim();
+            const goodQty = parseInt(document.getElementById('goodQty').value) || 0;
+            const scrapQty = parseInt(document.getElementById('scrapQty').value) || 0;
+            const scrapCode = document.getElementById('scrapCode').value;
+
             if (!badge) { showToast('Badge number is required', 'error'); return; }
+
             try {
                 const response = await fetch(`${API_BASE}/complete`, {
                     method: 'POST',
@@ -397,7 +428,10 @@
                         part: pendingCompletion.part,
                         serial: pendingCompletion.serial,
                         opNumber: pendingCompletion.opNumber,
-                        badgeNumber: badge
+                        badgeNumber: badge,
+                        goodQty: goodQty,
+                        scrapQty: scrapQty,
+                        scrapCode: scrapCode
                     })
                 });
                 if (response.ok) {
