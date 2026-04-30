@@ -43,6 +43,7 @@ builder.Services.AddDbContext<TrackCell.Api.Data.AppDbContext>(options =>
 
 // Register the WorkItem service as Scoped since DbContext is Scoped
 builder.Services.AddScoped<WorkItemService>();
+builder.Services.AddScoped<OperationHistoryService>();
 
 var app = builder.Build();
 
