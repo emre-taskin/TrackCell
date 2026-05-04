@@ -18,6 +18,7 @@ builder.Services.AddSingleton(Channel.CreateBounded<MTConnectData>(new BoundedCh
 }));
 
 builder.Services.AddHostedService<MTConnectPollingWorker>();
+builder.Services.AddHostedService<MTConnectAdapterWorker>();
 builder.Services.AddHostedService<DatabaseWriterWorker>();
 builder.Services.AddHostedService<RabbitMQDispatcherWorker>();
 

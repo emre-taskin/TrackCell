@@ -29,16 +29,19 @@ public class MTConnectPollingWorker : BackgroundService
         var pollIntervalSeconds = _configuration.GetValue<int>("MTConnect:PollIntervalSeconds", 10);
         var machines = _configuration.GetSection("MTConnect:Machines").Get<List<MachineConfig>>() ?? [];
 
-        if (machines.Count == 0)
+        var httpMachines = machines.Where(m => string.IsNullOrEmpty(m.CommunicationType) || m.CommunicationType.Equals("HttpXml", StringComparison.OrdinalIgnoreCase)).ToList();
+
+        if (httpMachines.Count == 0)
         {
-            _logger.LogWarning("No machines configured for MTConnect polling.");
+            _logger.LogInformation("No machines configured for HttpXml MTConnect polling.");
+            return;
         }
 
         while (!stoppingToken.IsCancellationRequested)
         {
             _logger.LogInformation("Polling MTConnect agents at: {time}", DateTimeOffset.Now);
 
-            foreach (var machine in machines)
+            foreach (var machine in httpMachines)
             {
                 try
                 {
