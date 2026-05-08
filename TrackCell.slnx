@@ -2,4 +2,5 @@
   <Project Path="TrackCell.Api/TrackCell.Api.csproj" />
   <Project Path="TrackCell.UI/TrackCell.UI.csproj" />
   <Project Path="EdgeCollector/EdgeCollector.csproj" />
+  <Project Path="ServerMonitor/ServerMonitor.csproj" />
 </Solution>

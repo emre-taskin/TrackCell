@@ -11,10 +11,16 @@ namespace TrackCell.Api.Data
         public DbSet<PartDefinition> PartDefinitions { get; set; } = null!;
         public DbSet<OperationDefinition> OperationDefinitions { get; set; } = null!;
         public DbSet<OperationHistory> OperationHistories { get; set; } = null!;
+        public DbSet<ServerMetric> ServerMetrics { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<ServerMetric>(b =>
+            {
+                b.HasIndex(m => new { m.MachineName, m.Timestamp });
+            });
             
             // Seed Dummy Data so the UI dropdowns have things to show!
             modelBuilder.Entity<Operator>().HasData(
