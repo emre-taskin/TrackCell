@@ -1,0 +1,42 @@
+<div class="dashboard-header">
+  <h2>Kaizen Kanban Dashboard</h2>
+  <div class="last-updated">
+    Last updated: <span>{{ lastUpdated() }}</span>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  @if (columns().length === 0) {
+    <div class="empty-board">
+      <h3>🎉 No active parts in process!</h3>
+      <p>Work center is completely clear.</p>
+    </div>
+  } @else {
+    @for (col of columns(); track trackColumn($index, col)) {
+      <div class="op-column">
+        <div class="op-header">
+          <span>{{ col.opNumber }}</span>
+          <span class="op-badge" [style.background]="col.badgeColor">{{ col.count }}</span>
+        </div>
+        <div class="op-items">
+          @for (item of col.items; track trackItem($index, item)) {
+            <div class="work-item">
+              <div class="work-item-detail">
+                <span class="label">Badge</span>
+                <span class="value">{{ item.badgeNumber }}</span>
+              </div>
+              <div class="work-item-detail">
+                <span class="label">Part</span>
+                <span class="value accent">{{ item.part }}</span>
+              </div>
+              <div class="work-item-detail">
+                <span class="label">Serial</span>
+                <span class="value">{{ item.serial }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

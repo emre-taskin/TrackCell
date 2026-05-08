@@ -1,0 +1,25 @@
+<div class="dashboard-header">
+  <h2>3D Factory Layout — HNK NET75 Cell</h2>
+  <div class="header-meta">
+    <div class="last-updated">Last updated: <span>{{ lastUpdated() }}</span></div>
+    <div class="conn">
+      <span class="dot" [style.color]="connColor()">●</span>
+      <span>{{ connText() }}</span>
+    </div>
+  </div>
+</div>
+
+<div #factoryRoot class="factory-root">
+  <canvas #factoryCanvas class="factory-canvas"></canvas>
+
+  <div class="legend">
+    <div class="legend-title">HNK NET75 Vertical Lathe Cell</div>
+    <div class="legend-sub">12 machines · 2 rows × 6</div>
+    <div><span class="swatch swatch-active"></span>Active (running)</div>
+    <div><span class="swatch swatch-idle"></span>Idle</div>
+    <div><span class="swatch swatch-paused"></span>Paused (&gt; 2h open)</div>
+    <div class="legend-help">Drag to rotate · Scroll to zoom</div>
+  </div>
+
+  <div #hoverPanel class="hover-panel"></div>
+</div>
