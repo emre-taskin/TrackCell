@@ -1,0 +1,119 @@
+.operator-entry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.entry-title {
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.entry-subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.list-title {
+  margin-bottom: 2rem;
+}
+
+.field-info {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  min-height: 1.2rem;
+  color: var(--text-secondary);
+}
+
+.start-btn {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.active-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 2rem;
+}
+
+.empty-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.active-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.active-item-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.active-item-sub {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.accent { color: var(--accent-color); }
+
+.inline-complete {
+  width: auto;
+  margin-top: 0;
+  padding: 0.5rem 1rem;
+}
+
+/* Completion modal */
+.completion-modal {
+  margin: auto;
+  padding: 2rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--text-primary);
+  max-width: 400px;
+  width: 100%;
+  box-shadow: var(--glass-shadow);
+}
+
+.completion-modal h3 {
+  margin-bottom: 1rem;
+}
+
+.modal-sub {
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.btn-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+@media (max-width: 900px) {
+  .operator-entry-grid {
+    grid-template-columns: 1fr;
+  }
+}

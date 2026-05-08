@@ -1,0 +1,129 @@
+<div class="operator-entry-grid">
+
+  <!-- Operator Form -->
+  <div class="glass-card">
+    <h2 class="entry-title">Operator Entry</h2>
+    <p class="entry-subtitle">Scan badge → scan serial → confirm operation.</p>
+
+    <form (ngSubmit)="onSubmit($event)">
+      <!-- Step 1: Badge -->
+      <div class="form-group">
+        <label for="badgeNumber">
+          <span class="step-badge step-badge-active">1</span>
+          Badge Number
+        </label>
+        <input #badgeInput type="text" id="badgeNumber" class="form-control" required autocomplete="off"
+               placeholder="Scan or type badge..."
+               [(ngModel)]="badge" name="badge"
+               (keydown)="onBadgeKeydown($event)" />
+        <div class="field-info" [style.color]="operatorInfo().color">
+          @if (operator(); as op) {
+            <strong>{{ op.name }}</strong> ({{ op.badgeNumber }})
+          } @else {
+            {{ operatorInfo().text }}
+          }
+        </div>
+      </div>
+
+      <!-- Step 2: Serial -->
+      <div class="form-group">
+        <label for="serial">
+          <span [class]="stepClass(step2())">2</span>
+          Serial Number
+        </label>
+        <input #serialInput type="text" id="serial" class="form-control" required autocomplete="off"
+               placeholder="Scan or type serial..."
+               [disabled]="!serialEnabled()"
+               [(ngModel)]="serial" name="serial"
+               (keydown)="onSerialKeydown($event)" />
+        <div class="field-info" [style.color]="serialInfo().color">{{ serialInfo().text }}</div>
+      </div>
+
+      <!-- Step 3: Part -->
+      <div class="form-group">
+        <label for="part">
+          <span [class]="stepClass(step3())">3</span>
+          Part Number
+        </label>
+        <select #partSelect id="part" class="form-control" required
+                [disabled]="!partEnabled()"
+                [(ngModel)]="part" name="part"
+                (change)="onPartChange()">
+          @if (partOptions().length === 0) {
+            <option value="">Scan serial first...</option>
+          }
+          @for (opt of partOptions(); track opt.value + opt.label) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        <div class="field-info" [style.color]="partInfo().color">{{ partInfo().text }}</div>
+      </div>
+
+      <!-- Step 4: Operation -->
+      <div class="form-group">
+        <label for="opNumber">
+          <span [class]="stepClass(step4())">4</span>
+          Operation Number
+        </label>
+        <select #opSelect id="opNumber" class="form-control" required
+                [disabled]="!opEnabled()"
+                [(ngModel)]="opNumber" name="opNumber"
+                (change)="onOpChange()">
+          @if (opOptions().length === 0) {
+            <option value="">Select part first...</option>
+          }
+          @for (opt of opOptions(); track opt.value + opt.label) {
+            <option [value]="opt.value" [disabled]="opt.disabled">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary start-btn" [disabled]="!startEnabled()">
+        Start Operation
+      </button>
+    </form>
+  </div>
+
+  <!-- Active Operations List -->
+  <div class="glass-card">
+    <h2 class="entry-title list-title">My Open Operations</h2>
+
+    <div class="active-items">
+      @if (activeItems().length === 0) {
+        <div class="empty-state">
+          <span class="empty-icon">✅</span>
+          No open operations.
+        </div>
+      } @else {
+        @for (item of activeItems(); track item.id) {
+          <div class="work-item active-item">
+            <div>
+              <div class="active-item-title">
+                Op: {{ item.opNumber }} | Part: <span class="accent">{{ item.part }}</span>
+              </div>
+              <div class="active-item-sub">
+                Badge: {{ item.badgeNumber }} | Serial: {{ item.serial }}
+              </div>
+            </div>
+            <button type="button" class="btn btn-complete inline-complete" (click)="promptCompletion(item)">
+              Complete
+            </button>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>
+
+<dialog #completionDialog class="completion-modal">
+  <h3>Confirm Completion</h3>
+  <p class="modal-sub">Please scan or type your Badge Number to confirm.</p>
+  <div class="form-group">
+    <input #confirmBadge type="text" class="form-control" required placeholder="Scan badge..."
+           [(ngModel)]="confirmBadgeValue" name="confirmBadgeValue" />
+  </div>
+  <div class="modal-actions">
+    <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
+    <button type="button" class="btn btn-primary" (click)="submitCompletion()">Complete</button>
+  </div>
+</dialog>
