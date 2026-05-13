@@ -9,12 +9,12 @@ import {
 } from '../models/track-cell.models';
 
 @Injectable({ providedIn: 'root' })
-export class WorkItemsService {
+export class OperationHistoryService {
   private http = inject(HttpClient);
-  private base = environment.apiBase + environment.workItemsPath;
+  private base = environment.apiBase + environment.operationHistoryPath;
 
-  getActive(): Observable<WorkItem[]> {
-    return this.http.get<WorkItem[]>(`${this.base}/active`);
+  getInProgress(): Observable<WorkItem[]> {
+    return this.http.get<WorkItem[]>(`${this.base}/inprogress`);
   }
 
   start(req: StartWorkItemRequest): Observable<WorkItem> {

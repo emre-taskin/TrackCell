@@ -6,25 +6,25 @@ using TrackCell.Api.Services;
 namespace TrackCell.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    public class WorkItemsController : ControllerBase
+    [Route("[controller]")]
+    public class OperationHistoryController : ControllerBase
     {
         private readonly WorkItemService _workItemService;
 
-        public WorkItemsController(WorkItemService workItemService)
+        public OperationHistoryController(WorkItemService workItemService)
         {
             _workItemService = workItemService;
         }
 
-        [HttpGet("active")]
-        public async Task<IActionResult> GetActiveWorkItems()
+        [HttpGet("inprogress")]
+        public async Task<IActionResult> InProgress()
         {
             var items = await _workItemService.GetActiveWorkItemsAsync();
             return Ok(items);
         }
 
         [HttpPost("start")]
-        public async Task<IActionResult> StartOperation([FromBody] WorkItem item)
+        public async Task<IActionResult> Start([FromBody] WorkItem item)
         {
             if (string.IsNullOrWhiteSpace(item.BadgeNumber) ||
                 string.IsNullOrWhiteSpace(item.Part) ||
@@ -39,7 +39,7 @@ namespace TrackCell.Api.Controllers
         }
 
         [HttpPost("complete")]
-        public async Task<IActionResult> CompleteOperation([FromBody] CompleteOperationRequest request)
+        public async Task<IActionResult> Complete([FromBody] CompleteOperationRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Part) ||
                 string.IsNullOrWhiteSpace(request.Serial) ||
@@ -48,7 +48,8 @@ namespace TrackCell.Api.Controllers
                 return BadRequest("Part, Serial, and OpNumber are required.");
             }
 
-            var success = await _workItemService.CompleteOperationAsync(request.Part, request.Serial, request.OpNumber, request.BadgeNumber);
+            var success = await _workItemService.CompleteOperationAsync(
+                request.Part, request.Serial, request.OpNumber, request.BadgeNumber);
             if (success)
             {
                 return Ok(new { Message = "Operation completed successfully." });

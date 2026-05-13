@@ -8,7 +8,7 @@ using TrackCell.Api.Models;
 namespace TrackCell.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class NonConformancesController : ControllerBase
     {
         private readonly AppDbContext _dbContext;

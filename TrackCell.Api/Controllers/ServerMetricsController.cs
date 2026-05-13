@@ -6,7 +6,7 @@ using TrackCell.Api.Services;
 namespace TrackCell.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class ServerMetricsController : ControllerBase
     {
         private readonly ServerMetricService _service;

@@ -8,7 +8,7 @@ using TrackCell.Api.Services;
 namespace TrackCell.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class MasterDataController : ControllerBase
     {
         private readonly AppDbContext _dbContext;
@@ -20,29 +20,46 @@ namespace TrackCell.Api.Controllers
             _historyService = historyService;
         }
 
-        [HttpGet("operators")]
-        public async Task<IActionResult> GetOperators()
-        {
-            var data = await _dbContext.Operators.OrderBy(x => x.Name).ToListAsync();
-            return Ok(data);
-        }
-
-        [HttpGet("parts")]
+        [HttpGet("getParts")]
         public async Task<IActionResult> GetParts()
         {
             var data = await _dbContext.PartDefinitions.OrderBy(x => x.PartNumber).ToListAsync();
             return Ok(data);
         }
 
-        [HttpGet("operations")]
+        // No PartDefinition→OperationDefinition relationship exists in the schema,
+        // so this returns the global operations list and validates the part exists.
+        [HttpGet("getOperationsByPart")]
+        public async Task<IActionResult> GetOperationsByPart([FromQuery] string partNumber)
+        {
+            if (string.IsNullOrWhiteSpace(partNumber))
+                return BadRequest("partNumber is required.");
+
+            var partExists = await _dbContext.PartDefinitions
+                .AnyAsync(p => p.PartNumber == partNumber);
+            if (!partExists) return NotFound($"Part '{partNumber}' not found.");
+
+            var data = await _dbContext.OperationDefinitions
+                .OrderBy(x => x.OpNumber)
+                .ToListAsync();
+            return Ok(data);
+        }
+
+        [HttpGet("getOperators")]
+        public async Task<IActionResult> GetOperators()
+        {
+            var data = await _dbContext.Operators.OrderBy(x => x.Name).ToListAsync();
+            return Ok(data);
+        }
+
+        [HttpGet("getOperations")]
         public async Task<IActionResult> GetOperations()
         {
             var data = await _dbContext.OperationDefinitions.OrderBy(x => x.OpNumber).ToListAsync();
             return Ok(data);
         }
 
-        // Lookup a single operator by badge number (used by barcode scan on Operator Entry).
-        [HttpGet("operators/{badgeNumber}")]
+        [HttpGet("getOperatorByBadge/{badgeNumber}")]
         public async Task<IActionResult> GetOperatorByBadge(string badgeNumber)
         {
             var op = await _dbContext.Operators
@@ -51,10 +68,7 @@ namespace TrackCell.Api.Controllers
             return Ok(op);
         }
 
-        // Lookup a serial number in operation history.
-        // Returns the part this serial belongs to, and the list of completed op numbers,
-        // so the Operator Entry page can auto-fill the part and suggest the next op.
-        [HttpGet("serial/{serialNumber}")]
+        [HttpGet("getSerialHistory/{serialNumber}")]
         public async Task<IActionResult> GetSerialHistory(string serialNumber)
         {
             var history = await _historyService.GetSerialHistoryAsync(serialNumber);
