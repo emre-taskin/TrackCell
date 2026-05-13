@@ -1,9 +1,8 @@
-using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TrackCell.Api.Data;
-using TrackCell.Api.Models;
+using TrackCell.Api.Constants;
+using TrackCell.Api.Services;
 
 namespace TrackCell.Api.Controllers
 {
@@ -11,64 +10,44 @@ namespace TrackCell.Api.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly AppDbContext _dbContext;
+        private readonly IUserService _service;
 
-        public UserController(AppDbContext dbContext)
+        public UserController(IUserService service)
         {
-            _dbContext = dbContext;
+            _service = service ?? throw new System.ArgumentNullException(nameof(service));
         }
 
+        [Authorize(Policy = Policy.Name.AuthorizationRead)]
         [HttpGet("getById")]
         public async Task<IActionResult> GetByIdAsync([FromQuery] int id)
         {
-            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id);
+            var user = await _service.GetByIdAsync(id);
             if (user == null) return NotFound("No record was found for the provided ID.");
             return Ok(user);
         }
 
+        [Authorize(Policy = Policy.Name.AuthorizationRead)]
         [HttpGet("getUserAccessInfoById")]
         public async Task<IActionResult> GetUserAccessInfoByIdAsync([FromQuery] int id)
         {
-            var info = await _dbContext.Users
-                .Where(u => u.Id == id)
-                .Select(u => new UserAccessInfoDto
-                {
-                    Id = u.Id,
-                    WindowsAccount = u.WindowsAccount,
-                    Name = u.Name,
-                    Email = u.Email,
-                    Role = u.Role,
-                    IsActive = u.IsActive
-                })
-                .FirstOrDefaultAsync();
-
+            var info = await _service.GetUserAccessInfoByIdAsync(id);
             if (info == null) return NotFound("No record was found for the provided ID.");
             return Ok(info);
         }
 
+        [Authorize(Policy = Policy.Name.AuthorizationRead)]
         [HttpGet("getUserAccessInfoByWindowsAccount")]
         public async Task<IActionResult> GetUserAccessInfoByWindowsAccountAsync([FromQuery] string windowsAccount)
         {
             if (string.IsNullOrWhiteSpace(windowsAccount))
                 return BadRequest("windowsAccount is required.");
 
-            var info = await _dbContext.Users
-                .Where(u => u.WindowsAccount == windowsAccount)
-                .Select(u => new UserAccessInfoDto
-                {
-                    Id = u.Id,
-                    WindowsAccount = u.WindowsAccount,
-                    Name = u.Name,
-                    Email = u.Email,
-                    Role = u.Role,
-                    IsActive = u.IsActive
-                })
-                .FirstOrDefaultAsync();
-
+            var info = await _service.GetUserAccessInfoByWindowsAccountAsync(windowsAccount);
             if (info == null) return NotFound("No record was found for the provided windows account.");
             return Ok(info);
         }
 
+        [Authorize(Policy = Policy.Name.AuthorizationWrite)]
         [HttpPost("setRoleToUser")]
         public async Task<IActionResult> SetRoleToUser([FromBody] SetRoleToUserDto setRoleToUserDto)
         {
@@ -78,24 +57,11 @@ namespace TrackCell.Api.Controllers
             if (string.IsNullOrWhiteSpace(setRoleToUserDto.Role))
                 return BadRequest("Role is required.");
 
-            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == setRoleToUserDto.UserId);
+            var user = await _service.SetRoleToUserAsync(setRoleToUserDto.UserId, setRoleToUserDto.Role);
             if (user == null) return NotFound("No record was found for the provided ID.");
-
-            user.Role = setRoleToUserDto.Role.Trim();
-            await _dbContext.SaveChangesAsync();
 
             return Ok(user);
         }
-    }
-
-    public class UserAccessInfoDto
-    {
-        public int Id { get; set; }
-        public string WindowsAccount { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
-        public bool IsActive { get; set; }
     }
 
     public class SetRoleToUserDto
