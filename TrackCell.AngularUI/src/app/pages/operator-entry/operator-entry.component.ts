@@ -22,7 +22,7 @@ import {
 import { DashboardHubService } from '../../services/dashboard-hub.service';
 import { MasterDataService } from '../../services/master-data.service';
 import { ToastService } from '../../services/toast.service';
-import { WorkItemsService } from '../../services/work-items.service';
+import { OperationHistoryService } from '../../services/operation-history.service';
 
 type StepState = 'idle' | 'active' | 'done';
 
@@ -41,7 +41,7 @@ interface PendingCompletion {
 })
 export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy {
   private masterData = inject(MasterDataService);
-  private workItems = inject(WorkItemsService);
+  private workItems = inject(OperationHistoryService);
   private hub = inject(DashboardHubService);
   private toast = inject(ToastService);
 
@@ -121,7 +121,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private fetchActiveItems(): void {
-    this.workItems.getActive().subscribe({
+    this.workItems.getInProgress().subscribe({
       next: items => this.activeItems.set(items),
       error: e => console.warn('active fetch failed', e)
     });

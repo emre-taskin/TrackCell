@@ -15,22 +15,27 @@ export class MasterDataService {
   private base = environment.apiBase + environment.masterDataPath;
 
   getOperators(): Observable<Operator[]> {
-    return this.http.get<Operator[]>(`${this.base}/operators`);
+    return this.http.get<Operator[]>(`${this.base}/getOperators`);
   }
 
   getOperatorByBadge(badge: string): Observable<Operator> {
-    return this.http.get<Operator>(`${this.base}/operators/${encodeURIComponent(badge)}`);
+    return this.http.get<Operator>(`${this.base}/getOperatorByBadge/${encodeURIComponent(badge)}`);
   }
 
   getParts(): Observable<PartDefinition[]> {
-    return this.http.get<PartDefinition[]>(`${this.base}/parts`);
+    return this.http.get<PartDefinition[]>(`${this.base}/getParts`);
   }
 
   getOperations(): Observable<OperationDefinition[]> {
-    return this.http.get<OperationDefinition[]>(`${this.base}/operations`);
+    return this.http.get<OperationDefinition[]>(`${this.base}/getOperations`);
+  }
+
+  getOperationsByPart(partNumber: string): Observable<OperationDefinition[]> {
+    const url = `${this.base}/getOperationsByPart?partNumber=${encodeURIComponent(partNumber)}`;
+    return this.http.get<OperationDefinition[]>(url);
   }
 
   getSerialHistory(serial: string): Observable<SerialHistory> {
-    return this.http.get<SerialHistory>(`${this.base}/serial/${encodeURIComponent(serial)}`);
+    return this.http.get<SerialHistory>(`${this.base}/getSerialHistory/${encodeURIComponent(serial)}`);
   }
 }
