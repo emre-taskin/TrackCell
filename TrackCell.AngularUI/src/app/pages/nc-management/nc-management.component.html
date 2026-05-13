@@ -85,7 +85,8 @@
             drag its bottom-right handle to resize. Selected zone = green.
           </div>
           <div class="canvas-wrap">
-            <img
+            <div class="canvas-inner">
+              <img
               #imageEl
               [src]="imageSrc(selectedImage())"
               [alt]="selectedImage()!.name"
@@ -124,6 +125,7 @@
               }
             </div>
           </div>
+        </div>
 
           <div class="canvas-actions">
             <button

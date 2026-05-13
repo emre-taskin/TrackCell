@@ -24,7 +24,7 @@ export const routes: Routes = [
     path: 'nc-management',
     loadComponent: () =>
       import('./pages/nc-management/nc-management.component').then(m => m.NcManagementComponent),
-    data: { title: 'NC Management' }
+    data: { title: 'NC Management', fullscreen: true }
   },
   { path: '**', redirectTo: '' }
 ];

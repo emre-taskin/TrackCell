@@ -41,8 +41,7 @@ builder.Services.AddOpenApi();
 // Reads from "ConnectionStrings:DefaultConnection" in appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<TrackCell.Api.Data.AppDbContext>(options =>
-    options.UseNpgsql(connectionString)
-           .UseSnakeCaseNamingConvention());
+    options.UseInMemoryDatabase("trackcell"));
 
 // Register the generic repository so any IBaseRepository<TEntity> can be injected
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
@@ -68,7 +67,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<TrackCell.Api.Data.AppDbContext>();
-    await dbContext.Database.MigrateAsync();
+    await dbContext.Database.EnsureCreatedAsync();
 }
 
 // Configure the HTTP request pipeline.
