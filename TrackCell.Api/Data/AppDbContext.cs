@@ -16,6 +16,7 @@ namespace TrackCell.Api.Data
         public DbSet<PartImage> PartImages { get; set; } = null!;
         public DbSet<ImageZone> ImageZones { get; set; } = null!;
         public DbSet<ImageZoneNonConformance> ImageZoneNonConformances { get; set; } = null!;
+        public DbSet<User> Users { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,6 +30,11 @@ namespace TrackCell.Api.Data
             modelBuilder.Entity<NonConformance>(b =>
             {
                 b.HasIndex(n => n.Code).IsUnique();
+            });
+
+            modelBuilder.Entity<User>(b =>
+            {
+                b.HasIndex(u => u.WindowsAccount).IsUnique();
             });
 
             modelBuilder.Entity<PartImage>(b =>
