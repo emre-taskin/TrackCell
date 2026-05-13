@@ -1,0 +1,199 @@
+<section class="nc-page">
+  <header class="nc-toolbar glass-panel">
+    <div class="toolbar-group">
+      <label for="partSelect" class="field-label">Part</label>
+      <select
+        id="partSelect"
+        class="field-control"
+        [ngModel]="selectedPartId()"
+        (ngModelChange)="onPartIdChange($event)"
+      >
+        <option [ngValue]="null">Select a part...</option>
+        @for (p of parts(); track p.id) {
+          <option [ngValue]="p.id">{{ p.partNumber }} — {{ p.description }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="toolbar-group">
+      <label for="imgName" class="field-label">New image name</label>
+      <input
+        id="imgName"
+        class="field-control"
+        type="text"
+        placeholder="e.g. Front view"
+        [(ngModel)]="newImageName"
+        [disabled]="!selectedPartId()"
+      />
+      <input
+        #fileInput
+        class="hidden-file"
+        type="file"
+        accept="image/*"
+        (change)="onFilePicked($event)"
+      />
+      <button
+        type="button"
+        class="btn btn-accent"
+        [disabled]="!selectedPartId() || uploading()"
+        (click)="fileInput.click()"
+      >
+        {{ uploading() ? 'Uploading...' : 'Upload Image' }}
+      </button>
+    </div>
+  </header>
+
+  @if (!selectedPartId()) {
+    <div class="empty-state glass-panel">
+      <p>Select a part to manage its images and NC zones.</p>
+    </div>
+  } @else {
+    <div class="nc-layout">
+      <aside class="image-list glass-panel">
+        <h3>Images</h3>
+        @if (images().length === 0) {
+          <p class="dim">No images yet. Upload one to begin.</p>
+        }
+        <ul>
+          @for (img of images(); track trackImage($index, img)) {
+            <li
+              [class.active]="selectedImage()?.id === img.id"
+              (click)="selectImage(img)"
+            >
+              <img [src]="imageSrc(img)" [alt]="img.name" />
+              <div class="meta">
+                <div class="name">{{ img.name }}</div>
+                <div class="dim small">{{ img.zones.length }} zone(s)</div>
+              </div>
+              <button
+                type="button"
+                class="btn-icon"
+                title="Delete image"
+                (click)="deleteImage(img, $event)"
+              >×</button>
+            </li>
+          }
+        </ul>
+      </aside>
+
+      <main class="canvas-area glass-panel">
+        @if (!selectedImage()) {
+          <p class="dim">Select or upload an image to start drawing zones.</p>
+        } @else {
+          <div class="canvas-help dim small">
+            Click &amp; drag on the image to draw a new zone. Drag a zone to move it,
+            drag its bottom-right handle to resize. Selected zone = green.
+          </div>
+          <div class="canvas-wrap">
+            <img
+              #imageEl
+              [src]="imageSrc(selectedImage())"
+              [alt]="selectedImage()!.name"
+              class="canvas-image"
+              draggable="false"
+            />
+            <div
+              #overlayEl
+              class="zone-overlay"
+              (mousedown)="onOverlayMouseDown($event)"
+              (mousemove)="onOverlayMouseMove($event)"
+              (mouseup)="onOverlayMouseUp()"
+              (mouseleave)="onOverlayMouseUp()"
+            >
+              @for (z of zones(); track trackZone($index, z); let i = $index) {
+                <div
+                  class="zone-rect"
+                  [class.selected]="selectedZoneIdx() === i"
+                  [attr.data-handle]="'move'"
+                  [attr.data-zone-idx]="i"
+                  [style.left.%]="z.x * 100"
+                  [style.top.%]="z.y * 100"
+                  [style.width.%]="z.width * 100"
+                  [style.height.%]="z.height * 100"
+                  (click)="selectZone(i, $event)"
+                >
+                  <span class="zone-label" [attr.data-handle]="'move'" [attr.data-zone-idx]="i">
+                    {{ z.name }}
+                  </span>
+                  <span
+                    class="zone-handle"
+                    [attr.data-handle]="'br'"
+                    [attr.data-zone-idx]="i"
+                  ></span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="canvas-actions">
+            <button
+              type="button"
+              class="btn btn-accent"
+              [disabled]="!dirty() || saving()"
+              (click)="saveZones()"
+            >
+              {{ saving() ? 'Saving...' : (dirty() ? 'Save Zones' : 'Saved') }}
+            </button>
+            @if (dirty()) {
+              <span class="dim small">Unsaved changes</span>
+            }
+          </div>
+        }
+      </main>
+
+      <aside class="zone-panel glass-panel">
+        <h3>Zones</h3>
+        @if (!selectedImage()) {
+          <p class="dim">—</p>
+        } @else if (zones().length === 0) {
+          <p class="dim">Draw a rectangle on the image to create a zone.</p>
+        } @else {
+          <ul class="zone-list">
+            @for (z of zones(); track trackZone($index, z); let i = $index) {
+              <li [class.active]="selectedZoneIdx() === i" (click)="selectZone(i)">
+                <div class="zone-row">
+                  <input
+                    type="text"
+                    class="zone-name-input"
+                    [value]="z.name"
+                    (input)="onZoneNameInput(i, $event)"
+                    (click)="$event.stopPropagation()"
+                  />
+                  <button
+                    type="button"
+                    class="btn-icon"
+                    title="Remove zone"
+                    (click)="removeZone(i); $event.stopPropagation()"
+                  >×</button>
+                </div>
+                <div class="zone-ncs dim small">{{ ncNamesForZone(z) }}</div>
+              </li>
+            }
+          </ul>
+
+          @if (selectedZoneIdx() !== null) {
+            <div class="nc-picker">
+              <h4>Non-Conformances on selected zone</h4>
+              @if (ncList().length === 0) {
+                <p class="dim small">No NCs available.</p>
+              }
+              @for (n of ncList(); track trackNc($index, n)) {
+                <label class="nc-check">
+                  <input
+                    type="checkbox"
+                    [checked]="ncSelectedOnZone(n.id)"
+                    (change)="toggleNcOnSelected(n.id, $event)"
+                  />
+                  <span class="nc-code">{{ n.code }}</span>
+                  <span class="nc-desc">{{ n.description }}</span>
+                </label>
+              }
+            </div>
+          } @else {
+            <p class="dim small">Select a zone to edit its NCs.</p>
+          }
+        }
+      </aside>
+    </div>
+  }
+</section>

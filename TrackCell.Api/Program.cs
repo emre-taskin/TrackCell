@@ -66,6 +66,17 @@ app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
 
+// Serve uploaded part images from wwwroot/uploads
+{
+    var webRoot = app.Environment.WebRootPath;
+    if (string.IsNullOrEmpty(webRoot))
+    {
+        webRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+    }
+    Directory.CreateDirectory(Path.Combine(webRoot, "uploads", "parts"));
+}
+app.UseStaticFiles();
+
 app.UseAuthorization();
 
 app.MapControllers();
