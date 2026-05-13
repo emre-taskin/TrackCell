@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using StackExchange.Redis;
+using TrackCell.Api.Constants;
 using TrackCell.Api.Data.Repositories;
 using TrackCell.Api.Hubs;
 using TrackCell.Api.Services;
@@ -49,6 +51,16 @@ builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped<WorkItemService>();
 builder.Services.AddScoped<OperationHistoryService>();
 builder.Services.AddScoped<ServerMetricService>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+// Authorization policies. The named policies referenced from controllers live here
+// so callers can swap in role/claim checks once an authentication scheme is added.
+// Until then, policies pass through so the API stays callable during development.
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(Policy.Name.AuthorizationRead, p => p.RequireAssertion(_ => true));
+    options.AddPolicy(Policy.Name.AuthorizationWrite, p => p.RequireAssertion(_ => true));
+});
 
 var app = builder.Build();
 

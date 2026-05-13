@@ -140,7 +140,7 @@ namespace TrackCell.Api.Models
         public NonConformance? NonConformance { get; set; }
     }
 
-    public class User
+    public class User : IEntity
     {
         [Key]
         public int Id { get; set; }
