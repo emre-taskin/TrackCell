@@ -4,7 +4,7 @@ import { Subscription } from 'rxjs';
 import { WorkItem } from '../../models/track-cell.models';
 import { DashboardHubService } from '../../services/dashboard-hub.service';
 import { ToastService } from '../../services/toast.service';
-import { WorkItemsService } from '../../services/work-items.service';
+import { OperationHistoryService } from '../../services/operation-history.service';
 
 interface OpColumn {
   opNumber: string;
@@ -21,7 +21,7 @@ interface OpColumn {
   styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  private workItems = inject(WorkItemsService);
+  private workItems = inject(OperationHistoryService);
   private hub = inject(DashboardHubService);
   private toast = inject(ToastService);
 
@@ -44,7 +44,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private fetchActiveItems(): void {
-    this.workItems.getActive().subscribe({
+    this.workItems.getInProgress().subscribe({
       next: items => {
         this.columns.set(this.groupByOp(items));
         this.lastUpdated.set(new Date().toLocaleTimeString());

@@ -168,8 +168,8 @@
         async function loadMasterData() {
             try {
                 const [pRes, oRes] = await Promise.all([
-                    fetch(`${MASTER_API_BASE}/parts`),
-                    fetch(`${MASTER_API_BASE}/operations`)
+                    fetch(`${MASTER_API_BASE}/getParts`),
+                    fetch(`${MASTER_API_BASE}/getOperations`)
                 ]);
                 if (pRes.ok) state.allParts = await pRes.json();
                 if (oRes.ok) state.allOps = await oRes.json();
@@ -182,7 +182,7 @@
             info.style.color = 'var(--text-secondary)';
             info.textContent = 'Looking up badge...';
             try {
-                const res = await fetch(`${MASTER_API_BASE}/operators/${encodeURIComponent(badge)}`);
+                const res = await fetch(`${MASTER_API_BASE}/getOperatorByBadge/${encodeURIComponent(badge)}`);
                 if (res.status === 404) {
                     info.style.color = 'var(--danger-color, #ef4444)';
                     info.textContent = `Unknown badge: ${badge}`;
@@ -222,7 +222,7 @@
             info.style.color = 'var(--text-secondary)';
             info.textContent = 'Looking up serial...';
             try {
-                const res = await fetch(`${MASTER_API_BASE}/serial/${encodeURIComponent(serial)}`);
+                const res = await fetch(`${MASTER_API_BASE}/getSerialHistory/${encodeURIComponent(serial)}`);
                 if (res.status === 404) {
                     // Serial not found — operator must pick the part manually.
                     state.serialHistory = null;
@@ -368,7 +368,7 @@
         // --- Active items list (mostly unchanged) ---
         async function fetchActiveItems() {
             try {
-                const response = await fetch(`${API_BASE}/active`);
+                const response = await fetch(`${API_BASE}/inprogress`);
                 if (response.ok) renderActiveItems(await response.json());
             } catch (err) { console.error("Failed to fetch active items:", err); }
         }

@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using StackExchange.Redis;
 using TrackCell.Api.Constants;
+using TrackCell.Api.Data.Repositories;
 using TrackCell.Api.Hubs;
 using TrackCell.Api.Services;
 
@@ -42,6 +43,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<TrackCell.Api.Data.AppDbContext>(options =>
     options.UseNpgsql(connectionString)
            .UseSnakeCaseNamingConvention());
+
+// Register the generic repository so any IBaseRepository<TEntity> can be injected
+builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 
 // Register the WorkItem service as Scoped since DbContext is Scoped
 builder.Services.AddScoped<WorkItemService>();

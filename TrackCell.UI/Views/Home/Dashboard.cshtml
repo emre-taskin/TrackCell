@@ -37,7 +37,7 @@
 
         async function fetchActiveItems() {
             try {
-                const response = await fetch(`${API_BASE}/active`);
+                const response = await fetch(`${API_BASE}/inprogress`);
                 if (response.ok) {
                     const items = await response.json();
                     renderDashboard(items);

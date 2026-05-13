@@ -509,7 +509,7 @@
         // ---------- Data ----------
         async function fetchOperators() {
             try {
-                const res = await fetch(`${MASTER_API_BASE}/operators`);
+                const res = await fetch(`${MASTER_API_BASE}/getOperators`);
                 if (res.ok) {
                     const ops = await res.json();
                     operatorMap = {};
@@ -520,7 +520,7 @@
 
         async function fetchActiveItems() {
             try {
-                const res = await fetch(`${API_BASE}/active`);
+                const res = await fetch(`${API_BASE}/inprogress`);
                 if (res.ok) return await res.json();
             } catch (e) { console.warn('active fetch failed', e); }
             return [];

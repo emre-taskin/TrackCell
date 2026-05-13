@@ -2,12 +2,13 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TrackCell.Api.Constants;
+using TrackCell.Api.Models;
 using TrackCell.Api.Services;
 
 namespace TrackCell.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _service;
@@ -19,54 +20,44 @@ namespace TrackCell.Api.Controllers
 
         [Authorize(Policy = Policy.Name.AuthorizationRead)]
         [HttpGet("getById")]
-        public async Task<IActionResult> GetByIdAsync([FromQuery] int id)
+        public async Task<IActionResult> GetById([FromQuery] int id)
         {
             var user = await _service.GetByIdAsync(id);
-            if (user == null) return NotFound("No record was found for the provided ID.");
+            if (user == null) return NotFound();
             return Ok(user);
         }
 
         [Authorize(Policy = Policy.Name.AuthorizationRead)]
         [HttpGet("getUserAccessInfoById")]
-        public async Task<IActionResult> GetUserAccessInfoByIdAsync([FromQuery] int id)
+        public async Task<IActionResult> GetUserAccessInfoById([FromQuery] int id)
         {
             var info = await _service.GetUserAccessInfoByIdAsync(id);
-            if (info == null) return NotFound("No record was found for the provided ID.");
+            if (info == null) return NotFound();
             return Ok(info);
         }
 
         [Authorize(Policy = Policy.Name.AuthorizationRead)]
         [HttpGet("getUserAccessInfoByWindowsAccount")]
-        public async Task<IActionResult> GetUserAccessInfoByWindowsAccountAsync([FromQuery] string windowsAccount)
+        public async Task<IActionResult> GetUserAccessInfoByWindowsAccount([FromQuery] string windowsAccount)
         {
             if (string.IsNullOrWhiteSpace(windowsAccount))
                 return BadRequest("windowsAccount is required.");
 
             var info = await _service.GetUserAccessInfoByWindowsAccountAsync(windowsAccount);
-            if (info == null) return NotFound("No record was found for the provided windows account.");
+            if (info == null) return NotFound();
             return Ok(info);
         }
 
         [Authorize(Policy = Policy.Name.AuthorizationWrite)]
         [HttpPost("setRoleToUser")]
-        public async Task<IActionResult> SetRoleToUser([FromBody] SetRoleToUserDto setRoleToUserDto)
+        public async Task<IActionResult> SetRoleToUser([FromBody] SetRoleToUserRequest request)
         {
-            if (setRoleToUserDto == null)
-                return BadRequest("Request body is required.");
+            if (request.UserId <= 0 || string.IsNullOrWhiteSpace(request.Role))
+                return BadRequest("UserId and Role are required.");
 
-            if (string.IsNullOrWhiteSpace(setRoleToUserDto.Role))
-                return BadRequest("Role is required.");
-
-            var user = await _service.SetRoleToUserAsync(setRoleToUserDto.UserId, setRoleToUserDto.Role);
-            if (user == null) return NotFound("No record was found for the provided ID.");
-
-            return Ok(user);
+            var info = await _service.SetRoleToUserAsync(request.UserId, request.Role);
+            if (info == null) return NotFound();
+            return Ok(info);
         }
-    }
-
-    public class SetRoleToUserDto
-    {
-        public int UserId { get; set; }
-        public string Role { get; set; } = string.Empty;
     }
 }

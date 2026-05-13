@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TrackCell.Api.Models
 {
-    public class Operator
+    public class Operator : IEntity
     {
         [Key]
         public int Id { get; set; }
@@ -18,7 +18,7 @@ namespace TrackCell.Api.Models
         public string Name { get; set; } = string.Empty;
     }
 
-    public class PartDefinition
+    public class PartDefinition : IEntity
     {
         [Key]
         public int Id { get; set; }
@@ -31,7 +31,7 @@ namespace TrackCell.Api.Models
         public string Description { get; set; } = string.Empty;
     }
 
-    public class OperationDefinition
+    public class OperationDefinition : IEntity
     {
         [Key]
         public int Id { get; set; }
@@ -44,7 +44,7 @@ namespace TrackCell.Api.Models
         public string Description { get; set; } = string.Empty;
     }
 
-    public class OperationHistory
+    public class OperationHistory : IEntity
     {
         [Key]
         public int Id { get; set; }
@@ -72,7 +72,7 @@ namespace TrackCell.Api.Models
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 
-    public class NonConformance
+    public class NonConformance : IEntity
     {
         [Key]
         public int Id { get; set; }
@@ -86,7 +86,7 @@ namespace TrackCell.Api.Models
         public string Description { get; set; } = string.Empty;
     }
 
-    public class PartImage
+    public class PartImage : IEntity
     {
         [Key]
         public int Id { get; set; }
@@ -110,7 +110,7 @@ namespace TrackCell.Api.Models
         public List<ImageZone> Zones { get; set; } = new();
     }
 
-    public class ImageZone
+    public class ImageZone : IEntity
     {
         [Key]
         public int Id { get; set; }
@@ -140,7 +140,7 @@ namespace TrackCell.Api.Models
         public NonConformance? NonConformance { get; set; }
     }
 
-    public class User
+    public class User : IEntity
     {
         [Key]
         public int Id { get; set; }
@@ -149,20 +149,15 @@ namespace TrackCell.Api.Models
         [MaxLength(100)]
         public string WindowsAccount { get; set; } = string.Empty;
 
-        [Required]
         [MaxLength(100)]
-        public string Name { get; set; } = string.Empty;
-
-        [MaxLength(200)]
-        public string Email { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(50)]
-        public string Role { get; set; } = "User";
+        public string Role { get; set; } = "Operator";
 
-        public bool IsActive { get; set; } = true;
-
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        [MaxLength(50)]
+        public string? BadgeNumber { get; set; }
     }
 
     public class ServerMetric

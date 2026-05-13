@@ -15,7 +15,7 @@ import { WorkItem } from '../../models/track-cell.models';
 import { ConnectionStatus, DashboardHubService } from '../../services/dashboard-hub.service';
 import { MasterDataService } from '../../services/master-data.service';
 import { ToastService } from '../../services/toast.service';
-import { WorkItemsService } from '../../services/work-items.service';
+import { OperationHistoryService } from '../../services/operation-history.service';
 
 interface MachineParts {
   base: THREE.Mesh;
@@ -63,7 +63,7 @@ const PAUSE_THRESHOLD_MS = 2 * 60 * 60 * 1000;
   styleUrl: './factory-3d.component.css'
 })
 export class Factory3dComponent implements AfterViewInit, OnDestroy {
-  private workItems = inject(WorkItemsService);
+  private workItems = inject(OperationHistoryService);
   private masterData = inject(MasterDataService);
   private hub = inject(DashboardHubService);
   private toast = inject(ToastService);
@@ -579,7 +579,7 @@ export class Factory3dComponent implements AfterViewInit, OnDestroy {
   private async fetchActiveItems(): Promise<WorkItem[]> {
     try {
       return await new Promise<WorkItem[]>((resolve, reject) => {
-        this.workItems.getActive().subscribe({ next: resolve, error: reject });
+        this.workItems.getInProgress().subscribe({ next: resolve, error: reject });
       });
     } catch (e) {
       console.warn('active fetch failed', e);

@@ -28,7 +28,7 @@ public class MetricsReporterWorker : BackgroundService
 
         var monitor = configuration.GetSection("Monitor");
         _interval = TimeSpan.FromSeconds(monitor.GetValue("SampleIntervalSeconds", 15));
-        _endpoint = monitor.GetValue("ReportPath", "api/servermetrics")!;
+        _endpoint = monitor.GetValue("ReportPath", "ServerMetrics")!;
 
         _retryPolicy = Policy
             .Handle<HttpRequestException>()

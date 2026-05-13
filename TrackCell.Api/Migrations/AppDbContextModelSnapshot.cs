@@ -342,23 +342,16 @@ namespace TrackCell.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                    b.Property<string>("BadgeNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("badge_number");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("email");
-
-                    b.Property<bool>("IsActive").HasColumnType("boolean").HasColumnName("is_active");
-
-                    b.Property<string>("Name")
+                    b.Property<string>("DisplayName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
-                        .HasColumnName("name");
+                        .HasColumnName("display_name");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -377,6 +370,12 @@ namespace TrackCell.Api.Migrations
                     b.HasIndex("WindowsAccount").IsUnique().HasDatabaseName("ix_users_windows_account");
 
                     b.ToTable("users", (string)null);
+
+                    b.HasData(
+                        new { Id = 1, BadgeNumber = "EMP-1001", DisplayName = "Alice Smith",   Role = "Operator",   WindowsAccount = "DOMAIN\\asmith" },
+                        new { Id = 2, BadgeNumber = "EMP-1002", DisplayName = "Bob Johnson",   Role = "Operator",   WindowsAccount = "DOMAIN\\bjohnson" },
+                        new { Id = 3, BadgeNumber = "EMP-1003", DisplayName = "Charlie Brown", Role = "Supervisor", WindowsAccount = "DOMAIN\\cbrown" },
+                        new { Id = 4, BadgeNumber = "EMP-1004", DisplayName = "Diana Prince",  Role = "Admin",      WindowsAccount = "DOMAIN\\dprince" });
                 });
 
             modelBuilder.Entity("TrackCell.Api.Models.ImageZone", b =>
