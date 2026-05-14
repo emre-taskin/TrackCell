@@ -105,6 +105,7 @@
         // URLs are loaded from window.AppConfig (injected by _Layout from appsettings.json).
         const API_BASE = window.AppConfig.workItems;
         const MASTER_API_BASE = window.AppConfig.masterData;
+        const PART_API_BASE = window.AppConfig.part;
 
         // --- State ---
         const state = {
@@ -168,7 +169,7 @@
         async function loadMasterData() {
             try {
                 const [pRes, oRes] = await Promise.all([
-                    fetch(`${MASTER_API_BASE}/getParts`),
+                    fetch(`${PART_API_BASE}/getAll`),
                     fetch(`${MASTER_API_BASE}/getOperations`)
                 ]);
                 if (pRes.ok) state.allParts = await pRes.json();

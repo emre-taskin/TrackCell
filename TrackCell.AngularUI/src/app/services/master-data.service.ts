@@ -13,6 +13,7 @@ import {
 export class MasterDataService {
   private http = inject(HttpClient);
   private base = environment.apiBase + environment.masterDataPath;
+  private partBase = environment.apiBase + environment.partPath;
 
   getOperators(): Observable<Operator[]> {
     return this.http.get<Operator[]>(`${this.base}/getOperators`);
@@ -23,7 +24,7 @@ export class MasterDataService {
   }
 
   getParts(): Observable<PartDefinition[]> {
-    return this.http.get<PartDefinition[]>(`${this.base}/getParts`);
+    return this.http.get<PartDefinition[]>(`${this.partBase}/getAll`);
   }
 
   getOperations(): Observable<OperationDefinition[]> {

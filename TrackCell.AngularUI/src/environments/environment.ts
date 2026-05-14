@@ -4,6 +4,7 @@ export const environment = {
   hubPath: '/dashboardHub',
   operationHistoryPath: '/OperationHistory',
   masterDataPath: '/MasterData',
+  partPath: '/Part',
   userPath: '/User',
   nonConformancesPath: '/NonConformances',
   partImagesPath: '/PartImages'

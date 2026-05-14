@@ -20,13 +20,6 @@ namespace TrackCell.Api.Controllers
             _historyService = historyService;
         }
 
-        [HttpGet("getParts")]
-        public async Task<IActionResult> GetParts()
-        {
-            var data = await _dbContext.PartDefinitions.OrderBy(x => x.PartNumber).ToListAsync();
-            return Ok(data);
-        }
-
         // No PartDefinition→OperationDefinition relationship exists in the schema,
         // so this returns the global operations list and validates the part exists.
         [HttpGet("getOperationsByPart")]
