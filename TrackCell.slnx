@@ -1,6 +1,9 @@
 <Solution>
-  <Project Path="TrackCell.Api/TrackCell.Api.csproj" />
+  <Project Path="TrackCell.Domain/TrackCell.Domain.csproj" />
+  <Project Path="TrackCell.Application/TrackCell.Application.csproj" />
+  <Project Path="TrackCell.Infrastructure/TrackCell.Infrastructure.csproj" />
+  <Project Path="TrackCell.API/TrackCell.API.csproj" />
   <Project Path="TrackCell.UI/TrackCell.UI.csproj" />
-  <Project Path="EdgeCollector/EdgeCollector.csproj" />
+  <Project Path="TrackCell.CollectorService/TrackCell.CollectorService.csproj" />
   <Project Path="ServerMonitor/ServerMonitor.csproj" />
 </Solution>
