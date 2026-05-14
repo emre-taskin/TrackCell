@@ -1,8 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
+using TrackCell.API.Authorization;
 using TrackCell.API.Hubs;
 using TrackCell.API.Services;
-using TrackCell.API.Utils;
 using TrackCell.Application.Interfaces;
 using TrackCell.Infrastructure.Persistence;
 
@@ -40,11 +41,9 @@ builder.Services.AddScoped<OperationHistoryService>();
 builder.Services.AddScoped<ServerMetricService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy(Policy.Name.AuthorizationRead, p => p.RequireAssertion(_ => true));
-    options.AddPolicy(Policy.Name.AuthorizationWrite, p => p.RequireAssertion(_ => true));
-});
+builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 var app = builder.Build();
 
