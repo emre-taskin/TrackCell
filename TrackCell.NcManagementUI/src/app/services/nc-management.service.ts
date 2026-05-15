@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { NonConformance, PartImage, SaveZonesRequest } from '../models/track-cell.models';
+import { NonConformance, PartImage, SaveZonesRequest } from '../models/nc.models';
 
 @Injectable({ providedIn: 'root' })
 export class NcManagementService {

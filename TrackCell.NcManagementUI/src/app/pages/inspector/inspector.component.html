@@ -1,0 +1,51 @@
+<section class="inspector-page">
+  <header class="page-header">
+    <div>
+      <h2>Inspector</h2>
+      <div class="page-sub">Scan a serial, pick an operation, then mark OK or record non-conformances per zone.</div>
+    </div>
+  </header>
+
+  @if (!resolvedSerial()) {
+    <div class="glass-panel serial-card">
+      <label class="field-label" for="serial">Serial number</label>
+      <div class="serial-row">
+        <input
+          id="serial"
+          class="field-control"
+          type="text"
+          placeholder="Scan or type serial..."
+          [ngModel]="serial()"
+          (ngModelChange)="serial.set($event)"
+          (keydown.enter)="lookup()"
+          autofocus
+        />
+        <button class="btn btn-accent" [disabled]="!serial().trim()" (click)="lookup()">Look up</button>
+      </div>
+      <p class="dim small">
+        On lookup, the server resolves the part instance and returns its operation list.
+        This view is the entry point of the inspection flow.
+      </p>
+    </div>
+  } @else {
+    <div class="glass-panel resolved">
+      <div class="resolved-head">
+        <div>
+          <div class="field-label">Serial</div>
+          <div class="serial-value">{{ resolvedSerial() }}</div>
+        </div>
+        <button class="btn" (click)="reset()">Change serial</button>
+      </div>
+
+      <div class="placeholder">
+        <h3>Operation selection · zone overlay · findings — coming soon</h3>
+        <ul>
+          <li>Load operations for this part instance</li>
+          <li>Render part image with zones overlaid</li>
+          <li>Fast path: mark whole operation OK</li>
+          <li>Detailed path: record findings per zone with photos and notes</li>
+        </ul>
+      </div>
+    </div>
+  }
+</section>

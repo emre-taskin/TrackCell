@@ -20,11 +20,5 @@ export const routes: Routes = [
       import('./pages/factory-3d/factory-3d.component').then(m => m.Factory3dComponent),
     data: { title: '3D Factory Layout', fullscreen: true }
   },
-  {
-    path: 'nc-management',
-    loadComponent: () =>
-      import('./pages/nc-management/nc-management.component').then(m => m.NcManagementComponent),
-    data: { title: 'NC Management', fullscreen: true }
-  },
   { path: '**', redirectTo: '' }
 ];

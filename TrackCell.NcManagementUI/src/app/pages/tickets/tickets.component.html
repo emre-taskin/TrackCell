@@ -1,0 +1,27 @@
+<section class="tickets-page">
+  <header class="page-header">
+    <div>
+      <h2>Tickets</h2>
+      <div class="page-sub">Auto-generated when 5 consecutive NCs occur on the same (Part, Zone). Open → InProgress → Resolved → Closed.</div>
+    </div>
+  </header>
+
+  <div class="state-tabs">
+    @for (s of states; track s) {
+      <button
+        type="button"
+        class="state-tab"
+        [class.active]="selectedState() === s"
+        (click)="selectState(s)"
+      >{{ s }}</button>
+    }
+  </div>
+
+  <div class="glass-panel ticket-list">
+    <p class="dim">
+      No tickets to show in <strong>{{ selectedState() }}</strong>. Once the Tickets API
+      lands, this page will list tickets with assignee, root-cause, and corrective-action
+      fields, and let you transition state.
+    </p>
+  </div>
+</section>

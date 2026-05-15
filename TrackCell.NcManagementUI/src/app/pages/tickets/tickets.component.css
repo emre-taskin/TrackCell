@@ -1,0 +1,33 @@
+.tickets-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.state-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.state-tab {
+  background: rgba(15, 23, 42, 0.6);
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 0.4rem 0.95rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.state-tab:hover { border-color: var(--accent-color); }
+
+.state-tab.active {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.ticket-list { min-height: 200px; }
