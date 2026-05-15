@@ -11,11 +11,10 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
-  ImageZone,
   NonConformance,
   PartDefinition,
   PartImage
-} from '../../models/track-cell.models';
+} from '../../models/nc.models';
 import { MasterDataService } from '../../services/master-data.service';
 import { NcManagementService } from '../../services/nc-management.service';
 import { ToastService } from '../../services/toast.service';
@@ -33,13 +32,13 @@ interface DraftZone {
 type DragMode = 'create' | 'move' | 'resize' | null;
 
 @Component({
-  selector: 'app-nc-management',
+  selector: 'app-part-editor',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './nc-management.component.html',
-  styleUrl: './nc-management.component.css'
+  templateUrl: './part-editor.component.html',
+  styleUrl: './part-editor.component.css'
 })
-export class NcManagementComponent implements OnInit {
+export class PartEditorComponent implements OnInit {
   private master = inject(MasterDataService);
   private nc = inject(NcManagementService);
   private toast = inject(ToastService);
@@ -66,10 +65,8 @@ export class NcManagementComponent implements OnInit {
   uploading = signal(false);
   saving = signal(false);
 
-  // Upload form
   newImageName = '';
 
-  // Drag state
   private dragMode: DragMode = null;
   private dragStartX = 0;
   private dragStartY = 0;
@@ -180,7 +177,6 @@ export class NcManagementComponent implements OnInit {
     });
   }
 
-  // ---------- zone editing on canvas ----------
   onOverlayMouseDown(ev: MouseEvent): void {
     if (!this.selectedImage()) return;
     const rect = this.overlayEl!.nativeElement.getBoundingClientRect();
@@ -202,7 +198,6 @@ export class NcManagementComponent implements OnInit {
       return;
     }
 
-    // Start creating a new zone
     this.dragMode = 'create';
     this.dragStartX = x;
     this.dragStartY = y;
@@ -257,7 +252,6 @@ export class NcManagementComponent implements OnInit {
       if (idx !== null) {
         const z = this.zones()[idx];
         if (z.width < 0.01 || z.height < 0.01) {
-          // Too small — discard.
           this.zones.update(list => list.filter((_, i) => i !== idx));
           this.selectedZoneIdx.set(null);
         } else {
@@ -345,7 +339,6 @@ export class NcManagementComponent implements OnInit {
     });
   }
 
-  // Helpers exposed to template
   trackZone = (_: number, z: DraftZone) => z.id ?? `new-${_}`;
   trackImage = (_: number, i: PartImage) => i.id;
   trackNc = (_: number, n: NonConformance) => n.id;

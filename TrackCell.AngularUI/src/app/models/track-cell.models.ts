@@ -50,39 +50,3 @@ export interface CompleteOperationRequest {
   badgeNumber: string;
 }
 
-export interface NonConformance {
-  id: number;
-  code: string;
-  description: string;
-}
-
-export interface ImageZone {
-  id: number;
-  name: string;
-  // Normalized 0..1 coordinates relative to the displayed image.
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  nonConformanceIds: number[];
-}
-
-export interface PartImage {
-  id: number;
-  partDefinitionId: number;
-  name: string;
-  imageUrl: string;
-  uploadedAt: string;
-  zones: ImageZone[];
-}
-
-export interface SaveZonesRequest {
-  zones: {
-    name: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    nonConformanceIds: number[];
-  }[];
-}

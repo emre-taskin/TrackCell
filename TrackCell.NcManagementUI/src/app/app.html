@@ -1,0 +1,40 @@
+<div class="app-shell">
+  <aside class="side-nav">
+    <div class="brand">
+      <span class="brand-icon">🔍</span>
+      <div>
+        <div class="brand-title">TrackCell NC</div>
+        <div class="brand-sub">Quality Management</div>
+      </div>
+    </div>
+
+    <nav class="nav-list">
+      <a class="nav-link" routerLink="/part-editor" routerLinkActive="active">
+        <span class="nav-icon">🧩</span>
+        <span>Part Editor</span>
+      </a>
+      <a class="nav-link" routerLink="/inspector" routerLinkActive="active">
+        <span class="nav-icon">🔎</span>
+        <span>Inspector</span>
+      </a>
+      <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </a>
+      <a class="nav-link" routerLink="/tickets" routerLinkActive="active">
+        <span class="nav-icon">🎫</span>
+        <span>Tickets</span>
+      </a>
+    </nav>
+
+    <div class="footer">v0.1 · TrackCell MES</div>
+  </aside>
+
+  <div class="page-area">
+    <main>
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+<app-toast-container />

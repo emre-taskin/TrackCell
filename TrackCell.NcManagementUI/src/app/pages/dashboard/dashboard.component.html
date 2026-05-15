@@ -1,0 +1,34 @@
+<section class="dashboard-page">
+  <header class="page-header">
+    <div>
+      <h2>Reporting Dashboard</h2>
+      <div class="page-sub">Aggregate views of NCs and tickets by part, zone, operation, inspector, shift and date range.</div>
+    </div>
+  </header>
+
+  <div class="metrics-grid">
+    @for (m of metrics; track m.label) {
+      <div class="metric glass-panel">
+        <div class="metric-label">{{ m.label }}</div>
+        <div class="metric-value">{{ m.value }}</div>
+        <div class="metric-hint dim small">{{ m.hint }}</div>
+      </div>
+    }
+  </div>
+
+  <div class="charts glass-panel">
+    <h3>Charts</h3>
+    <p class="dim">
+      Charts for NC counts/rates by part, zone, operation, NC type, inspector, shift, and
+      date range will land here. Plug into <code>/Reporting</code> endpoints once they exist.
+    </p>
+  </div>
+
+  <div class="charts glass-panel">
+    <h3>Active streaks</h3>
+    <p class="dim">
+      Live list of (Part, Zone) pairs by current consecutive-NC count toward the ticket
+      threshold (5).
+    </p>
+  </div>
+</section>
