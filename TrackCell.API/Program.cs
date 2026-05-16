@@ -40,9 +40,16 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-builder.Services.AddScoped<OperationHistoryService>();
-builder.Services.AddScoped<ServerMetricService>();
+builder.Services.AddScoped<IOperationHistoryService, OperationHistoryService>();
+builder.Services.AddScoped<IServerMetricService, ServerMetricService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPartService, PartService>();
+builder.Services.AddScoped<ISerialService, SerialService>();
+builder.Services.AddScoped<IOperationService, OperationService>();
+builder.Services.AddScoped<IReportingService, ReportingService>();
+builder.Services.AddScoped<INonConformanceService, NonConformanceService>();
+builder.Services.AddScoped<IPartImageService, PartImageService>();
+builder.Services.AddScoped<IInspectionResultService, InspectionResultService>();
 
 builder.Services.AddAuthorization(options =>
 {

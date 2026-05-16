@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using TrackCell.Application.Interfaces;
 using TrackCell.Domain.Dtos;
-using TrackCell.Domain.Entities;
-using TrackCell.Infrastructure.Persistence;
 
 namespace TrackCell.API.Controllers
 {
@@ -14,23 +9,19 @@ namespace TrackCell.API.Controllers
     [Route("[controller]")]
     public class InspectionResultsController : ControllerBase
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IInspectionResultService _service;
 
-        public InspectionResultsController(ApplicationDbContext dbContext)
+        public InspectionResultsController(IInspectionResultService service)
         {
-            _dbContext = dbContext;
+            _service = service ?? throw new System.ArgumentNullException(nameof(service));
         }
 
         [HttpGet]
         public async Task<IActionResult> List([FromQuery] int partImageId)
         {
             if (partImageId <= 0) return BadRequest("partImageId is required.");
-            var results = await _dbContext.InspectionResults
-                .Include(r => r.PartSerial)
-                .Where(r => r.PartImageId == partImageId)
-                .OrderByDescending(r => r.InspectedAt)
-                .ToListAsync();
-            return Ok(results.Select(ToDto));
+            var results = await _service.ListAsync(partImageId);
+            return Ok(results);
         }
 
         [HttpGet("heatmap")]
@@ -40,49 +31,8 @@ namespace TrackCell.API.Controllers
         {
             if (partImageId <= 0) return BadRequest("partImageId is required.");
 
-            var image = await _dbContext.PartImages
-                .Include(p => p.Zones)
-                .FirstOrDefaultAsync(p => p.Id == partImageId);
-            if (image == null) return NotFound();
-
-            var results = await _dbContext.InspectionResults
-                .Where(r => r.PartImageId == partImageId)
-                .Select(r => new { r.ImageZoneId, r.NonConformanceId })
-                .ToListAsync();
-
-            var zones = image.Zones
-                .OrderBy(z => z.Id)
-                .Select(z =>
-                {
-                    var zoneResults = results.Where(r => r.ImageZoneId == z.Id).ToList();
-                    var breakdown = zoneResults
-                        .GroupBy(r => r.NonConformanceId)
-                        .ToDictionary(g => g.Key, g => g.Count());
-                    var count = nonConformanceId.HasValue
-                        ? (breakdown.TryGetValue(nonConformanceId.Value, out var c) ? c : 0)
-                        : zoneResults.Count;
-                    return new HeatmapZoneDto
-                    {
-                        ZoneId = z.Id,
-                        Name = z.Name,
-                        X = z.X,
-                        Y = z.Y,
-                        Width = z.Width,
-                        Height = z.Height,
-                        Count = count,
-                        CountsByNonConformance = breakdown
-                    };
-                })
-                .ToList();
-
-            var response = new HeatmapResponseDto
-            {
-                PartImageId = partImageId,
-                NonConformanceId = nonConformanceId,
-                MaxCount = zones.Count == 0 ? 0 : zones.Max(z => z.Count),
-                TotalCount = zones.Sum(z => z.Count),
-                Zones = zones
-            };
+            var response = await _service.GetHeatmapAsync(partImageId, nonConformanceId);
+            if (response == null) return NotFound();
             return Ok(response);
         }
 
@@ -91,37 +41,9 @@ namespace TrackCell.API.Controllers
         {
             if (body == null) return BadRequest();
 
-            var zone = await _dbContext.ImageZones
-                .FirstOrDefaultAsync(z => z.Id == body.ImageZoneId && z.PartImageId == body.PartImageId);
-            if (zone == null) return BadRequest("Zone does not belong to the supplied part image.");
-
-            var ncExists = await _dbContext.NonConformances.AnyAsync(n => n.Id == body.NonConformanceId);
-            if (!ncExists) return BadRequest("Unknown nonConformanceId.");
-
-            var entity = new InspectionResult
-            {
-                PartImageId = body.PartImageId,
-                ImageZoneId = body.ImageZoneId,
-                NonConformanceId = body.NonConformanceId,
-                PartSerialId = body.PartSerialId,
-                Notes = string.IsNullOrWhiteSpace(body.Notes) ? null : body.Notes.Trim(),
-                InspectedAt = DateTime.UtcNow
-            };
-            _dbContext.InspectionResults.Add(entity);
-            await _dbContext.SaveChangesAsync();
-            return Ok(ToDto(entity));
+            var (result, error) = await _service.CreateAsync(body);
+            if (error != null) return BadRequest(error);
+            return Ok(result);
         }
-
-        private static InspectionResultDto ToDto(InspectionResult r) => new()
-        {
-            Id = r.Id,
-            PartImageId = r.PartImageId,
-            ImageZoneId = r.ImageZoneId,
-            NonConformanceId = r.NonConformanceId,
-            PartSerialId = r.PartSerialId,
-            SerialNumber = r.PartSerial?.SerialNumber,
-            Notes = r.Notes,
-            InspectedAt = r.InspectedAt
-        };
     }
 }

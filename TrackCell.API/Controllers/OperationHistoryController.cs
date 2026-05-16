@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using TrackCell.API.Services;
+using TrackCell.Application.Interfaces;
 using TrackCell.Domain.Entities;
 
 namespace TrackCell.API.Controllers
@@ -9,17 +9,17 @@ namespace TrackCell.API.Controllers
     [Route("[controller]")]
     public class OperationHistoryController : ControllerBase
     {
-        private readonly OperationHistoryService _operationHistoryService;
+        private readonly IOperationHistoryService _service;
 
-        public OperationHistoryController(OperationHistoryService operationHistoryService)
+        public OperationHistoryController(IOperationHistoryService service)
         {
-            _operationHistoryService = operationHistoryService;
+            _service = service ?? throw new System.ArgumentNullException(nameof(service));
         }
 
         [HttpGet("inprogress")]
         public async Task<IActionResult> InProgress()
         {
-            var items = await _operationHistoryService.GetActiveOperationHistoriesAsync();
+            var items = await _service.GetActiveOperationHistoriesAsync();
             return Ok(items);
         }
 
@@ -33,7 +33,7 @@ namespace TrackCell.API.Controllers
                 return BadRequest("All properties (BadgeNumber, PartSerialId, OpNumber) are required.");
             }
 
-            var createdItem = await _operationHistoryService.StartOperationAsync(item);
+            var createdItem = await _service.StartOperationAsync(item);
             return Ok(createdItem);
         }
 
@@ -46,7 +46,7 @@ namespace TrackCell.API.Controllers
                 return BadRequest("PartSerialId and OpNumber are required.");
             }
 
-            var success = await _operationHistoryService.CompleteOperationAsync(
+            var success = await _service.CompleteOperationAsync(
                 request.PartSerialId, request.OpNumber, request.BadgeNumber);
             if (success)
             {

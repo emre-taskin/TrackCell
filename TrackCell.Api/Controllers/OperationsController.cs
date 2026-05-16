@@ -1,10 +1,7 @@
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using TrackCell.Application.Interfaces;
 using TrackCell.Domain.Dtos;
-using TrackCell.Domain.Entities;
-using TrackCell.Infrastructure.Persistence;
 
 namespace TrackCell.API.Controllers
 {
@@ -12,20 +9,17 @@ namespace TrackCell.API.Controllers
     [Route("operation")]
     public class OperationsController : ControllerBase
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IOperationService _service;
 
-        public OperationsController(ApplicationDbContext dbContext)
+        public OperationsController(IOperationService service)
         {
-            _dbContext = dbContext;
+            _service = service ?? throw new System.ArgumentNullException(nameof(service));
         }
 
         [HttpGet("byPart/{partId}")]
         public async Task<IActionResult> GetOperationsByPart(int partId)
         {
-            var data = await _dbContext.OperationDefinitions
-                .Where(o => o.PartDefinitionId == partId)
-                .OrderBy(o => o.OpNumber)
-                .ToListAsync();
+            var data = await _service.GetByPartAsync(partId);
             return Ok(data);
         }
 
@@ -37,34 +31,13 @@ namespace TrackCell.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (string.IsNullOrWhiteSpace(dto.OpNumber))
+            var (op, error) = await _service.AddAsync(dto);
+            if (error != null)
             {
-                return BadRequest("OpNumber is required.");
+                if (error.Contains("not found")) return NotFound(error);
+                return BadRequest(error);
             }
-
-            var partExists = await _dbContext.PartDefinitions.AnyAsync(p => p.Id == dto.PartDefinitionId);
-            if (!partExists)
-            {
-                return NotFound($"Part with ID {dto.PartDefinitionId} not found.");
-            }
-
-            var exists = await _dbContext.OperationDefinitions.AnyAsync(o => o.PartDefinitionId == dto.PartDefinitionId && o.OpNumber == dto.OpNumber);
-            if (exists)
-            {
-                return BadRequest($"Operation '{dto.OpNumber}' already exists for this part.");
-            }
-
-            var newOp = new OperationDefinition
-            {
-                PartDefinitionId = dto.PartDefinitionId,
-                OpNumber = dto.OpNumber.Trim(),
-                Description = dto.Description?.Trim() ?? string.Empty
-            };
-
-            _dbContext.OperationDefinitions.Add(newOp);
-            await _dbContext.SaveChangesAsync();
-
-            return Ok(newOp);
+            return Ok(op);
         }
     }
 }

@@ -7,13 +7,14 @@ using Microsoft.AspNetCore.SignalR;
 using StackExchange.Redis;
 using Microsoft.EntityFrameworkCore;
 using TrackCell.API.Hubs;
+using TrackCell.Application.Interfaces;
 using TrackCell.Domain.Entities;
 using TrackCell.Domain.Enums;
 using TrackCell.Infrastructure.Persistence;
 
 namespace TrackCell.API.Services
 {
-    public class OperationHistoryService
+    public class OperationHistoryService : IOperationHistoryService
     {
         private readonly IDatabase _db;
         private readonly IHubContext<DashboardHub> _hubContext;
