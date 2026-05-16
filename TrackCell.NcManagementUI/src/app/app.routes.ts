@@ -19,6 +19,12 @@ export const routes: Routes = [
     data: { title: 'Inspector' }
   },
   {
+    path: 'nc-heatmap-report',
+    loadComponent: () =>
+      import('./pages/nc-heatmap-report/nc-heatmap-report.component').then(m => m.NcHeatmapReportComponent),
+    data: { title: 'NC Heatmap Report' }
+  },
+  {
     path: 'dashboard',
     loadComponent: () =>
       import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent),

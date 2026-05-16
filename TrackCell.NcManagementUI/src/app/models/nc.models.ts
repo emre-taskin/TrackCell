@@ -36,6 +36,43 @@ export interface PartImage {
   zones: ImageZone[];
 }
 
+export interface InspectionResult {
+  id: number;
+  partImageId: number;
+  imageZoneId: number;
+  nonConformanceId: number;
+  serialNumber: string | null;
+  notes: string | null;
+  inspectedAt: string;
+}
+
+export interface CreateInspectionResultRequest {
+  partImageId: number;
+  imageZoneId: number;
+  nonConformanceId: number;
+  serialNumber?: string;
+  notes?: string;
+}
+
+export interface HeatmapZone {
+  zoneId: number;
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  count: number;
+  countsByNonConformance: Record<number, number>;
+}
+
+export interface HeatmapResponse {
+  partImageId: number;
+  nonConformanceId: number | null;
+  maxCount: number;
+  totalCount: number;
+  zones: HeatmapZone[];
+}
+
 export interface SaveZonesRequest {
   zones: {
     name: string;

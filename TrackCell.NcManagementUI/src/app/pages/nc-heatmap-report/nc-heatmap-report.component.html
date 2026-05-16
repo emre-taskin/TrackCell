@@ -1,0 +1,186 @@
+<section class="nc-page">
+  <header class="page-header">
+    <div>
+      <h2>NC Heatmap Report</h2>
+      <div class="page-sub">
+        Visualize where non-conformances are reported on a part. Filter by a specific NC type to see its
+        distribution across zones.
+      </div>
+    </div>
+  </header>
+
+  <header class="nc-toolbar glass-panel">
+    <div class="toolbar-group">
+      <label for="partSelect" class="field-label">Part</label>
+      <select
+        id="partSelect"
+        class="field-control"
+        [ngModel]="selectedPartId()"
+        (ngModelChange)="onPartIdChange($event)"
+      >
+        <option [ngValue]="null">Select a part...</option>
+        @for (p of parts(); track p.id) {
+          <option [ngValue]="p.id">{{ p.partNumber }} — {{ p.description }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="toolbar-group">
+      <label for="imgSelect" class="field-label">Image</label>
+      <select
+        id="imgSelect"
+        class="field-control"
+        [ngModel]="selectedImage()?.id ?? null"
+        (ngModelChange)="onImageIdChange($event)"
+        [disabled]="images().length === 0"
+      >
+        @for (img of images(); track trackImage($index, img)) {
+          <option [ngValue]="img.id">{{ img.name }}</option>
+        }
+        @if (images().length === 0) {
+          <option [ngValue]="null">No images for this part</option>
+        }
+      </select>
+    </div>
+
+    <div class="toolbar-group">
+      <label for="ncSelect" class="field-label">Filter by NC</label>
+      <select
+        id="ncSelect"
+        class="field-control"
+        [ngModel]="selectedNcId()"
+        (ngModelChange)="onNcChange($event)"
+      >
+        <option [ngValue]="null">All NCs (combined)</option>
+        @for (n of ncList(); track trackNc($index, n)) {
+          <option [ngValue]="n.id">{{ n.code }} — {{ n.description }}</option>
+        }
+      </select>
+    </div>
+
+    @if (heatmap()) {
+      <div class="toolbar-group summary">
+        <span class="summary-pill">
+          <span class="dim small">Showing:</span>
+          <strong>{{ selectedNcLabel() }}</strong>
+        </span>
+        <span class="summary-pill">
+          <span class="dim small">Reports:</span>
+          <strong>{{ heatmap()!.totalCount }}</strong>
+        </span>
+        <span class="summary-pill">
+          <span class="dim small">Peak zone:</span>
+          <strong>{{ heatmap()!.maxCount }}</strong>
+        </span>
+      </div>
+    }
+  </header>
+
+  @if (!selectedPartId()) {
+    <div class="empty-state glass-panel">
+      <p>Select a part to view its heatmap.</p>
+    </div>
+  } @else if (!selectedImage()) {
+    <div class="empty-state glass-panel">
+      <p>This part has no images. Upload one in the Part Editor first.</p>
+    </div>
+  } @else {
+    <div class="heatmap-layout">
+      <main class="canvas-area glass-panel">
+        @if (loading()) {
+          <div class="canvas-help dim small">Loading heatmap...</div>
+        }
+        <div class="canvas-wrap">
+          <div class="canvas-inner">
+            <img
+              [src]="imageSrc(selectedImage())"
+              [alt]="selectedImage()!.name"
+              class="canvas-image"
+              draggable="false"
+            />
+            <div class="zone-overlay">
+              @for (z of heatmap()?.zones ?? []; track trackZone($index, z)) {
+                <div
+                  class="heat-zone"
+                  [class.hovered]="hoveredZoneId() === z.zoneId"
+                  [class.zero]="z.count === 0"
+                  [style.left.%]="z.x * 100"
+                  [style.top.%]="z.y * 100"
+                  [style.width.%]="z.width * 100"
+                  [style.height.%]="z.height * 100"
+                  [style.background]="zoneFill(z)"
+                  [style.borderColor]="zoneBorder(z)"
+                  (mouseenter)="hoveredZoneId.set(z.zoneId)"
+                  (mouseleave)="hoveredZoneId.set(null)"
+                  [title]="z.name + ' — ' + z.count + ' report(s)'"
+                >
+                  <div class="heat-count">{{ z.count }}</div>
+                  <div class="heat-name">{{ z.name }}</div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        @if ((heatmap()?.zones?.length ?? 0) === 0) {
+          <p class="dim center">No zones defined on this image. Draw zones in the Part Editor first.</p>
+        }
+      </main>
+
+      <aside class="side-panel glass-panel">
+        <h3>Legend</h3>
+        <div class="legend">
+          <div class="legend-row">
+            <span class="swatch" style="background: rgba(148,163,184,0.4); border-color: rgba(148,163,184,0.7)"></span>
+            <span>0 reports</span>
+          </div>
+          <div class="legend-row">
+            <span class="swatch" style="background: rgba(16,185,129,0.5); border-color: #10b981"></span>
+            <span>Low</span>
+          </div>
+          <div class="legend-row">
+            <span class="swatch" style="background: rgba(245,158,11,0.6); border-color: #f59e0b"></span>
+            <span>Medium</span>
+          </div>
+          <div class="legend-row">
+            <span class="swatch" style="background: rgba(239,68,68,0.7); border-color: #ef4444"></span>
+            <span>High (peak)</span>
+          </div>
+        </div>
+
+        <h3 class="section-divider">Zones</h3>
+        @if ((heatmap()?.zones?.length ?? 0) === 0) {
+          <p class="dim small">No zones to show.</p>
+        } @else {
+          <ul class="zone-list">
+            @for (z of heatmap()!.zones; track trackZone($index, z)) {
+              <li
+                [class.active]="hoveredZoneId() === z.zoneId"
+                (mouseenter)="hoveredZoneId.set(z.zoneId)"
+                (mouseleave)="hoveredZoneId.set(null)"
+              >
+                <div class="zone-row">
+                  <span class="zone-name">{{ z.name }}</span>
+                  <span
+                    class="zone-count"
+                    [style.background]="zoneFill(z)"
+                    [style.borderColor]="zoneBorder(z)"
+                  >{{ z.count }}</span>
+                </div>
+                @if (selectedNcId() === null && z.count > 0) {
+                  <div class="zone-breakdown dim small">
+                    @for (b of topNcsForZone(z); track b.ncId) {
+                      <span class="breakdown-chip" [title]="b.description">
+                        {{ b.code }} · {{ b.count }}
+                      </span>
+                    }
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </aside>
+    </div>
+  }
+</section>
