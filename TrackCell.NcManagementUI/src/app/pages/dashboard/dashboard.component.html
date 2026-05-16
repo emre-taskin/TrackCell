@@ -17,18 +17,39 @@
   </div>
 
   <div class="charts glass-panel">
-    <h3>Charts</h3>
-    <p class="dim">
-      Charts for NC counts/rates by part, zone, operation, NC type, inspector, shift, and
-      date range will land here. Plug into <code>/Reporting</code> endpoints once they exist.
-    </p>
+    <h3>NC Trend (Last 7 Days)</h3>
+    @if (trend().length === 0) {
+      <p class="dim small">Insufficient data to generate trend.</p>
+    } @else {
+      <div class="trend-chart">
+        @for (t of trend(); track t.date) {
+          <div class="trend-bar-wrap">
+            <div class="trend-bar" [style.height.%]="(t.count / 10) * 100" [title]="t.count + ' findings'"></div>
+            <div class="trend-label">{{ t.date }}</div>
+          </div>
+        }
+      </div>
+    }
   </div>
 
   <div class="charts glass-panel">
     <h3>Active streaks</h3>
-    <p class="dim">
-      Live list of (Part, Zone) pairs by current consecutive-NC count toward the ticket
-      threshold (5).
-    </p>
+    @if (streaks().length === 0) {
+      <p class="dim small">No active NC streaks detected.</p>
+    } @else {
+      <div class="streak-list">
+        @for (s of streaks(); track s.partName + s.zoneId) {
+          <div class="streak-item">
+            <div class="streak-meta">
+              <span class="streak-part"><code>{{ s.partName }}</code></span>
+              <span class="streak-zone">Zone ID: {{ s.zoneId }}</span>
+            </div>
+            <div class="streak-count" [class.danger]="s.count >= 5">
+              {{ s.count }} NCs
+            </div>
+          </div>
+        }
+      </div>
+    }
   </div>
 </section>

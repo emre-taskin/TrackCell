@@ -34,12 +34,99 @@
 .metric-hint { line-height: 1.3; }
 
 .charts h3 {
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
 }
 
-.charts code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.85em;
-  color: var(--accent-color);
+.trend-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  height: 180px;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.trend-bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  height: 100%;
+}
+
+.trend-bar {
+  width: 100%;
+  max-width: 32px;
+  background: linear-gradient(to top, var(--accent-color, #3b82f6), #60a5fa);
+  border-radius: 6px 6px 0 0;
+  min-height: 4px;
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.trend-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.streak-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.streak-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.streak-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateX(4px);
+}
+
+.streak-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.streak-part { 
+  font-weight: 600; 
+  color: var(--text-primary);
+}
+
+.streak-part code {
+  color: var(--accent-color, #3b82f6);
+  background: rgba(59, 130, 246, 0.1);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+}
+
+.streak-zone { 
+  font-size: 0.8rem; 
+  color: var(--text-secondary); 
+}
+
+.streak-count {
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.35rem 0.85rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  color: var(--text-primary);
+}
+
+.streak-count.danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
 }

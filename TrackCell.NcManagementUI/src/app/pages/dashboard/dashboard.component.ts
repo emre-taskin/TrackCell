@@ -25,6 +25,9 @@ export class DashboardComponent implements OnInit {
     { label: 'Open tickets', value: '—', hint: 'Awaiting investigation or fix' }
   ]);
 
+  streaks = signal<{ partName: string, zoneId: number, count: number }[]>([]);
+  trend = signal<{ date: string, count: number }[]>([]);
+
   ngOnInit(): void {
     this.reporting.getDashboardSummary().subscribe({
       next: (summary) => {
@@ -34,6 +37,8 @@ export class DashboardComponent implements OnInit {
           { label: 'Active streaks', value: summary.activeStreaks, hint: 'Zones approaching ticket threshold' },
           { label: 'Open tickets', value: summary.openTickets, hint: 'Awaiting investigation or fix' }
         ]);
+        this.streaks.set(summary.streaks);
+        this.trend.set(summary.trend);
       }
     });
   }
