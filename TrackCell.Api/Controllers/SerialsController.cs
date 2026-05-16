@@ -29,6 +29,46 @@ namespace TrackCell.API.Controllers
             return Ok(data);
         }
 
+        [HttpGet("lookup/{serialNumber}")]
+        public async Task<IActionResult> LookupSerial(string serialNumber)
+        {
+            if (string.IsNullOrWhiteSpace(serialNumber))
+                return BadRequest("SerialNumber is required.");
+
+            var trimmed = serialNumber.Trim();
+
+            var serial = await _dbContext.PartSerials
+                .Include(s => s.PartDefinition)
+                .FirstOrDefaultAsync(s => s.SerialNumber == trimmed);
+
+            if (serial == null || serial.PartDefinition == null)
+                return NotFound($"Serial '{trimmed}' was not found.");
+
+            var operations = await _dbContext.OperationDefinitions
+                .Where(o => o.PartDefinitionId == serial.PartDefinitionId)
+                .OrderBy(o => o.OpNumber)
+                .ToListAsync();
+
+            var result = new SerialLookupDto
+            {
+                PartSerial = new PartSerial
+                {
+                    Id = serial.Id,
+                    PartDefinitionId = serial.PartDefinitionId,
+                    SerialNumber = serial.SerialNumber
+                },
+                PartDefinition = new PartDefinition
+                {
+                    Id = serial.PartDefinition.Id,
+                    PartNumber = serial.PartDefinition.PartNumber,
+                    Description = serial.PartDefinition.Description
+                },
+                Operations = operations
+            };
+
+            return Ok(result);
+        }
+
         [HttpPost("add")]
         public async Task<IActionResult> AddSerial([FromBody] CreatePartSerialDto dto)
         {

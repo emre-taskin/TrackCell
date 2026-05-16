@@ -18,9 +18,12 @@
           [ngModel]="serial()"
           (ngModelChange)="serial.set($event)"
           (keydown.enter)="lookup()"
+          [disabled]="isLooking()"
           autofocus
         />
-        <button class="btn btn-accent" [disabled]="!serial().trim()" (click)="lookup()">Look up</button>
+        <button class="btn btn-accent" [disabled]="!serial().trim() || isLooking()" (click)="lookup()">
+          {{ isLooking() ? 'Looking up...' : 'Look up' }}
+        </button>
       </div>
       <p class="dim small">
         On lookup, the server resolves the part instance and returns its operation list.
@@ -30,22 +33,59 @@
   } @else {
     <div class="glass-panel resolved">
       <div class="resolved-head">
-        <div>
-          <div class="field-label">Serial</div>
-          <div class="serial-value">{{ resolvedSerial() }}</div>
+        <div class="resolved-info">
+          <div class="resolved-row">
+            <div class="field-label">Serial</div>
+            <div class="serial-value">{{ resolvedSerial()!.serialNumber }}</div>
+          </div>
+          @if (resolvedPart(); as part) {
+            <div class="resolved-row">
+              <div class="field-label">Part</div>
+              <div class="part-value">
+                <code>{{ part.partNumber }}</code>
+                @if (part.description) {
+                  <span class="dim part-desc">— {{ part.description }}</span>
+                }
+              </div>
+            </div>
+          }
         </div>
         <button class="btn" (click)="reset()">Change serial</button>
       </div>
 
-      <div class="placeholder">
-        <h3>Operation selection · zone overlay · findings — coming soon</h3>
-        <ul>
-          <li>Load operations for this part instance</li>
-          <li>Render part image with zones overlaid</li>
-          <li>Fast path: mark whole operation OK</li>
-          <li>Detailed path: record findings per zone with photos and notes</li>
-        </ul>
+      <div class="operations-section">
+        <div class="field-label">Select operation</div>
+        @if (operations().length === 0) {
+          <p class="dim small">No operations are defined for this part.</p>
+        } @else {
+          <ul class="operation-list">
+            @for (op of operations(); track op.id) {
+              <li>
+                <button
+                  type="button"
+                  class="operation-item"
+                  [class.selected]="selectedOperationId() === op.id"
+                  (click)="selectOperation(op.id)"
+                >
+                  <span class="op-number"><code>{{ op.opNumber }}</code></span>
+                  <span class="op-description">{{ op.description || '—' }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
       </div>
+
+      @if (selectedOperationId() !== null) {
+        <div class="placeholder">
+          <h3>Zone overlay · findings — coming soon</h3>
+          <ul>
+            <li>Render part image with zones overlaid</li>
+            <li>Fast path: mark whole operation OK</li>
+            <li>Detailed path: record findings per zone with photos and notes</li>
+          </ul>
+        </div>
+      }
     </div>
   }
 </section>
