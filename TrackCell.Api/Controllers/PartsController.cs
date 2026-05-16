@@ -1,10 +1,7 @@
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using TrackCell.Application.Interfaces;
 using TrackCell.Domain.Dtos;
-using TrackCell.Domain.Entities;
-using TrackCell.Infrastructure.Persistence;
 
 namespace TrackCell.API.Controllers
 {
@@ -12,17 +9,17 @@ namespace TrackCell.API.Controllers
     [Route("part")]
     public class PartsController : ControllerBase
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IPartService _service;
 
-        public PartsController(ApplicationDbContext dbContext)
+        public PartsController(IPartService service)
         {
-            _dbContext = dbContext;
+            _service = service ?? throw new System.ArgumentNullException(nameof(service));
         }
 
         [HttpGet]
         public async Task<IActionResult> GetParts()
         {
-            var data = await _dbContext.PartDefinitions.OrderBy(x => x.PartNumber).ToListAsync();
+            var data = await _service.GetAllAsync();
             return Ok(data);
         }
 
@@ -34,27 +31,9 @@ namespace TrackCell.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (string.IsNullOrWhiteSpace(dto.PartNumber))
-            {
-                return BadRequest("PartNumber is required.");
-            }
-
-            var exists = await _dbContext.PartDefinitions.AnyAsync(p => p.PartNumber == dto.PartNumber);
-            if (exists)
-            {
-                return BadRequest($"Part '{dto.PartNumber}' already exists.");
-            }
-
-            var newPart = new PartDefinition
-            {
-                PartNumber = dto.PartNumber.Trim(),
-                Description = dto.Description?.Trim() ?? string.Empty
-            };
-
-            _dbContext.PartDefinitions.Add(newPart);
-            await _dbContext.SaveChangesAsync();
-
-            return Ok(newPart);
+            var (part, error) = await _service.AddAsync(dto);
+            if (error != null) return BadRequest(error);
+            return Ok(part);
         }
     }
 }

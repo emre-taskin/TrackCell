@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using TrackCell.API.Services;
+using TrackCell.Application.Interfaces;
 using TrackCell.Domain.Dtos;
 
 namespace TrackCell.API.Controllers
@@ -9,11 +9,11 @@ namespace TrackCell.API.Controllers
     [Route("[controller]")]
     public class ServerMetricsController : ControllerBase
     {
-        private readonly ServerMetricService _service;
+        private readonly IServerMetricService _service;
 
-        public ServerMetricsController(ServerMetricService service)
+        public ServerMetricsController(IServerMetricService service)
         {
-            _service = service;
+            _service = service ?? throw new System.ArgumentNullException(nameof(service));
         }
 
         [HttpPost]

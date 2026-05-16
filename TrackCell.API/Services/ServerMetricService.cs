@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using TrackCell.Application.Interfaces;
 using TrackCell.Domain.Dtos;
 using TrackCell.Domain.Entities;
 using TrackCell.Infrastructure.Persistence;
 
 namespace TrackCell.API.Services
 {
-    public class ServerMetricService
+    public class ServerMetricService : IServerMetricService
     {
         private readonly ApplicationDbContext _dbContext;
 
