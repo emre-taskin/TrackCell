@@ -9,9 +9,7 @@ export class MasterDataService {
   private http = inject(HttpClient);
   private base = environment.apiBase + environment.masterDataPath;
 
-  getParts(): Observable<PartDefinition[]> {
-    return this.http.get<PartDefinition[]>(`${this.base}/getParts`);
-  }
+
 
   getOperationsByPart(partNumber: string): Observable<OperationDefinition[]> {
     const url = `${this.base}/getOperationsByPart?partNumber=${encodeURIComponent(partNumber)}`;

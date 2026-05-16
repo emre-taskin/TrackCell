@@ -13,20 +13,22 @@
 .metric {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.5rem;
 }
 
 .metric-label {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
+  font-weight: 600;
 }
 
 .metric-value {
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   font-weight: 700;
   color: var(--text-primary);
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
 }
 
 .metric-hint { line-height: 1.3; }

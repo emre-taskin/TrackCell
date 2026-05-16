@@ -9,7 +9,7 @@ import {
   PartImage
 } from '../../models/nc.models';
 import { InspectionResultService } from '../../services/inspection-result.service';
-import { MasterDataService } from '../../services/master-data.service';
+import { PartService } from '../../services/part.service';
 import { NcManagementService } from '../../services/nc-management.service';
 import { ToastService } from '../../services/toast.service';
 
@@ -21,7 +21,7 @@ import { ToastService } from '../../services/toast.service';
   styleUrl: './nc-heatmap-report.component.css'
 })
 export class NcHeatmapReportComponent implements OnInit {
-  private master = inject(MasterDataService);
+  private partService = inject(PartService);
   private nc = inject(NcManagementService);
   private inspections = inject(InspectionResultService);
   private toast = inject(ToastService);
@@ -44,7 +44,7 @@ export class NcHeatmapReportComponent implements OnInit {
   hoveredZoneId = signal<number | null>(null);
 
   ngOnInit(): void {
-    this.master.getParts().subscribe({
+    this.partService.getParts().subscribe({
       next: p => this.parts.set(p),
       error: () => this.toast.show('Failed to load parts', 'error')
     });

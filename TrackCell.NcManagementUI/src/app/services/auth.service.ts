@@ -168,14 +168,37 @@ export class AuthService {
       return;
     }
 
-    // Merge stored roles with defaults so built-ins always exist.
+    // Merge stored roles with defaults so built-ins always exist and have up-to-date permissions.
     const storedRoles = parsed.roles ?? [];
-    const mergedRoles: Role[] = [...storedRoles];
+    const mergedRoles: Role[] = [];
+    
     for (const def of DEFAULT_ROLES) {
-      if (!mergedRoles.some(r => r.id === def.id)) mergedRoles.push(def);
+      const stored = storedRoles.find(r => r.id === def.id);
+      if (stored) {
+        mergedRoles.push({
+          ...stored,
+          permissions: [...def.permissions] // Force update built-in permissions
+        });
+      } else {
+        mergedRoles.push(def);
+      }
+    }
+    
+    for (const r of storedRoles) {
+      if (!mergedRoles.some(mr => mr.id === r.id)) {
+        mergedRoles.push(r);
+      }
     }
 
     this._roles.set(mergedRoles);
+
+    // Auto-grant admin to the default user for development
+    for (const u of parsed.users) {
+      if (u.id === 'user-default' && !u.roleIds.includes(ADMIN_ROLE_ID)) {
+        u.roleIds.push(ADMIN_ROLE_ID);
+      }
+    }
+
     this._users.set(parsed.users);
     const currentId = parsed.currentUserId && parsed.users.some(u => u.id === parsed!.currentUserId)
       ? parsed.currentUserId

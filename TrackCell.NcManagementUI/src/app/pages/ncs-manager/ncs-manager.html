@@ -1,0 +1,52 @@
+<div class="page-header">
+  <div>
+    <h2>Non-Conformances Manager</h2>
+    <div class="page-sub">View and add new defect types</div>
+  </div>
+</div>
+
+<div class="parts-layout">
+  <div class="glass-panel parts-list-panel">
+    <h3>Existing NCs</h3>
+    @if (ncs().length === 0) {
+      <div class="empty-state">No NCs found. Add one below.</div>
+    } @else {
+      <div class="table-container">
+        <table class="parts-table">
+          <thead>
+            <tr>
+              <th>NC Code</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (nc of ncs(); track nc.id) {
+              <tr>
+                <td class="part-number-col"><code>{{ nc.code }}</code></td>
+                <td>{{ nc.description }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <div class="glass-panel form-panel">
+    <h3>Add New NC</h3>
+    <form (ngSubmit)="addNc()" class="part-form">
+      <div class="form-group">
+        <label>Code <span class="required">*</span></label>
+        <input type="text" class="field-control" [(ngModel)]="newNcCode" name="code" placeholder="e.g. NC-SCR" required>
+      </div>
+      <div class="form-group">
+        <label>Description <span class="required">*</span></label>
+        <textarea class="field-control" [(ngModel)]="newNcDescription" name="description" placeholder="e.g. Scratch on surface" rows="3" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-accent" [disabled]="isSubmitting() || !newNcCode.trim() || !newNcDescription.trim()">
+        <span class="material-symbols-rounded">add_circle</span>
+        <span>Create NC</span>
+      </button>
+    </form>
+  </div>
+</div>

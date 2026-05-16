@@ -13,5 +13,10 @@ namespace TrackCell.Domain.Entities
 
         [MaxLength(255)]
         public string Description { get; set; } = string.Empty;
+
+        [Required]
+        public int PartDefinitionId { get; set; }
+
+        public PartDefinition? PartDefinition { get; set; }
     }
 }

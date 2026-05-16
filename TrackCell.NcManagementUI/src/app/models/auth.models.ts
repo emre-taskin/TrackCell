@@ -7,7 +7,10 @@ export type Permission =
   | 'view:tickets'
   | 'view:admin'
   | 'manage:users'
-  | 'manage:roles';
+  | 'manage:roles'
+  | 'manage:parts'
+  | 'manage:ncs'
+  | 'manage:operations';
 
 export const ALL_PERMISSIONS: Permission[] = [
   'view:dashboard',
@@ -18,19 +21,25 @@ export const ALL_PERMISSIONS: Permission[] = [
   'view:tickets',
   'view:admin',
   'manage:users',
-  'manage:roles'
+  'manage:roles',
+  'manage:parts',
+  'manage:ncs',
+  'manage:operations'
 ];
 
 export const PERMISSION_LABELS: Record<Permission, string> = {
   'view:dashboard': 'View Dashboard',
   'view:part-editor': 'View Part Editor',
   'edit:part-editor': 'Edit Part Editor',
-  'view:inspector': 'View Inspector',
+  'view:inspector': 'View Inspection',
   'view:nc-heatmap-report': 'View NC Heatmap Report',
   'view:tickets': 'View Tickets',
   'view:admin': 'Access Admin Area',
   'manage:users': 'Manage Users',
-  'manage:roles': 'Manage Roles'
+  'manage:roles': 'Manage Roles',
+  'manage:parts': 'Manage Parts',
+  'manage:ncs': 'Manage NCs',
+  'manage:operations': 'Manage Operations'
 };
 
 export interface Role {

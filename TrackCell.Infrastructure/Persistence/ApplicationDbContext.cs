@@ -47,11 +47,11 @@ namespace TrackCell.Infrastructure.Persistence
             );
 
             modelBuilder.Entity<OperationDefinition>().HasData(
-                new OperationDefinition { Id = 1, OpNumber = "OP-10", Description = "Machining" },
-                new OperationDefinition { Id = 2, OpNumber = "OP-20", Description = "Sub-Assembly" },
-                new OperationDefinition { Id = 3, OpNumber = "OP-30", Description = "Primary Assembly" },
-                new OperationDefinition { Id = 4, OpNumber = "OP-40", Description = "Testing and QA" },
-                new OperationDefinition { Id = 5, OpNumber = "OP-50", Description = "Packaging" }
+                new OperationDefinition { Id = 1, OpNumber = "OP-10", Description = "Machining", PartDefinitionId = 1 },
+                new OperationDefinition { Id = 2, OpNumber = "OP-20", Description = "Sub-Assembly", PartDefinitionId = 1 },
+                new OperationDefinition { Id = 3, OpNumber = "OP-30", Description = "Primary Assembly", PartDefinitionId = 1 },
+                new OperationDefinition { Id = 4, OpNumber = "OP-40", Description = "Testing and QA", PartDefinitionId = 2 },
+                new OperationDefinition { Id = 5, OpNumber = "OP-50", Description = "Packaging", PartDefinitionId = 2 }
             );
 
             modelBuilder.Entity<NonConformance>().HasData(

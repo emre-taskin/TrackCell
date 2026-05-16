@@ -16,9 +16,9 @@ import {
   PartImage
 } from '../../models/nc.models';
 import { AuthService } from '../../services/auth.service';
-import { MasterDataService } from '../../services/master-data.service';
 import { NcManagementService } from '../../services/nc-management.service';
 import { ToastService } from '../../services/toast.service';
+import { PartService } from '../../services/part.service';
 
 interface DraftZone {
   id: number | null;
@@ -40,7 +40,7 @@ type DragMode = 'create' | 'move' | 'resize' | null;
   styleUrl: './part-editor.component.css'
 })
 export class PartEditorComponent implements OnInit {
-  private master = inject(MasterDataService);
+  private partService = inject(PartService);
   private nc = inject(NcManagementService);
   private toast = inject(ToastService);
   private auth = inject(AuthService);
@@ -77,7 +77,7 @@ export class PartEditorComponent implements OnInit {
   private zoneStart: DraftZone | null = null;
 
   ngOnInit(): void {
-    this.master.getParts().subscribe({
+    this.partService.getParts().subscribe({
       next: p => this.parts.set(p),
       error: () => this.toast.show('Failed to load parts', 'error')
     });

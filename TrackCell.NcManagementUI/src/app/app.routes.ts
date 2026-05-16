@@ -26,7 +26,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/inspector/inspector.component').then(m => m.InspectorComponent),
     canActivate: [permissionGuard('view:inspector')],
-    data: { title: 'Inspector' }
+    data: { title: 'Inspection' }
   },
   {
     path: 'nc-heatmap-report',
@@ -62,6 +62,27 @@ export const routes: Routes = [
       import('./pages/roles/roles.component').then(m => m.RolesComponent),
     canActivate: [permissionGuard('manage:roles')],
     data: { title: 'Roles & Permissions' }
+  },
+  {
+    path: 'admin/parts',
+    loadComponent: () =>
+      import('./pages/parts-manager/parts-manager').then(m => m.PartsManagerComponent),
+    canActivate: [permissionGuard('manage:parts')],
+    data: { title: 'Part Manager' }
+  },
+  {
+    path: 'admin/ncs',
+    loadComponent: () =>
+      import('./pages/ncs-manager/ncs-manager').then(m => m.NcsManagerComponent),
+    canActivate: [permissionGuard('manage:ncs')],
+    data: { title: 'Non-Conformances Manager' }
+  },
+  {
+    path: 'admin/operations',
+    loadComponent: () =>
+      import('./pages/operations-manager/operations-manager').then(m => m.OperationsManagerComponent),
+    canActivate: [permissionGuard('manage:operations')],
+    data: { title: 'Operations Manager' }
   },
   { path: '**', redirectTo: 'dashboard' }
 ];

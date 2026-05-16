@@ -26,6 +26,9 @@ export class App {
   protected readonly canViewAdmin = computed(() => this.auth.hasPermission('view:admin'));
   protected readonly canManageUsers = computed(() => this.auth.hasPermission('manage:users'));
   protected readonly canManageRoles = computed(() => this.auth.hasPermission('manage:roles'));
+  protected readonly canManageParts = computed(() => this.auth.hasPermission('manage:parts'));
+  protected readonly canManageNcs = computed(() => this.auth.hasPermission('manage:ncs'));
+  protected readonly canManageOperations = computed(() => this.auth.hasPermission('manage:operations'));
 
   protected readonly currentRoleNames = computed(() =>
     this.currentRoles().map(r => r.name).join(', ') || 'No role'

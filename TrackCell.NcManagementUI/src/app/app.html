@@ -1,7 +1,7 @@
 <div class="app-shell">
   <aside class="side-nav">
     <div class="brand">
-      <span class="brand-icon">🔍</span>
+      <span class="brand-icon material-symbols-rounded" style="font-size: 2rem; color: var(--accent-color);">track_changes</span>
       <div>
         <div class="brand-title">TrackCell NC</div>
         <div class="brand-sub">Quality Management</div>
@@ -11,31 +11,31 @@
     <nav class="nav-list">
       @if (canViewDashboard()) {
         <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">
-          <span class="nav-icon">📊</span>
+          <span class="nav-icon material-symbols-rounded">dashboard</span>
           <span>Dashboard</span>
         </a>
       }
       @if (canViewPartEditor()) {
         <a class="nav-link" routerLink="/part-editor" routerLinkActive="active">
-          <span class="nav-icon">🧩</span>
+          <span class="nav-icon material-symbols-rounded">extension</span>
           <span>Part Editor</span>
         </a>
       }
       @if (canViewInspector()) {
         <a class="nav-link" routerLink="/inspector" routerLinkActive="active">
-          <span class="nav-icon">🔎</span>
-          <span>Inspector</span>
+          <span class="nav-icon material-symbols-rounded">search_check</span>
+          <span>Inspection</span>
         </a>
       }
       @if (canViewNcHeatmapReport()) {
         <a class="nav-link" routerLink="/nc-heatmap-report" routerLinkActive="active">
-          <span class="nav-icon">🔥</span>
+          <span class="nav-icon material-symbols-rounded">local_fire_department</span>
           <span>NC Heatmap</span>
         </a>
       }
       @if (canViewTickets()) {
         <a class="nav-link" routerLink="/tickets" routerLinkActive="active">
-          <span class="nav-icon">🎫</span>
+          <span class="nav-icon material-symbols-rounded">confirmation_number</span>
           <span>Tickets</span>
         </a>
       }
@@ -44,20 +44,38 @@
         <div class="nav-section">Administration</div>
         @if (canViewAdmin()) {
           <a class="nav-link" routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-            <span class="nav-icon">⚙️</span>
+            <span class="nav-icon material-symbols-rounded">settings</span>
             <span>Admin</span>
           </a>
         }
         @if (canManageUsers()) {
           <a class="nav-link" routerLink="/admin/users" routerLinkActive="active">
-            <span class="nav-icon">👥</span>
+            <span class="nav-icon material-symbols-rounded">group</span>
             <span>Users</span>
           </a>
         }
         @if (canManageRoles()) {
           <a class="nav-link" routerLink="/admin/roles" routerLinkActive="active">
-            <span class="nav-icon">🛡️</span>
+            <span class="nav-icon material-symbols-rounded">shield_person</span>
             <span>Roles</span>
+          </a>
+        }
+        @if (canManageParts()) {
+          <a class="nav-link" routerLink="/admin/parts" routerLinkActive="active">
+            <span class="nav-icon material-symbols-rounded">category</span>
+            <span>Parts</span>
+          </a>
+        }
+        @if (canManageNcs()) {
+          <a class="nav-link" routerLink="/admin/ncs" routerLinkActive="active">
+            <span class="nav-icon material-symbols-rounded">report</span>
+            <span>NCs</span>
+          </a>
+        }
+        @if (canManageOperations()) {
+          <a class="nav-link" routerLink="/admin/operations" routerLinkActive="active">
+            <span class="nav-icon material-symbols-rounded">account_tree</span>
+            <span>Operations</span>
           </a>
         }
       }

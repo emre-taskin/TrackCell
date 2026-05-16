@@ -20,40 +20,11 @@ namespace TrackCell.API.Controllers
             _historyService = historyService;
         }
 
-        [HttpGet("getParts")]
-        public async Task<IActionResult> GetParts()
-        {
-            var data = await _dbContext.PartDefinitions.OrderBy(x => x.PartNumber).ToListAsync();
-            return Ok(data);
-        }
-
-        [HttpGet("getOperationsByPart")]
-        public async Task<IActionResult> GetOperationsByPart([FromQuery] string partNumber)
-        {
-            if (string.IsNullOrWhiteSpace(partNumber))
-                return BadRequest("partNumber is required.");
-
-            var partExists = await _dbContext.PartDefinitions
-                .AnyAsync(p => p.PartNumber == partNumber);
-            if (!partExists) return NotFound($"Part '{partNumber}' not found.");
-
-            var data = await _dbContext.OperationDefinitions
-                .OrderBy(x => x.OpNumber)
-                .ToListAsync();
-            return Ok(data);
-        }
 
         [HttpGet("getOperators")]
         public async Task<IActionResult> GetOperators()
         {
             var data = await _dbContext.Operators.OrderBy(x => x.Name).ToListAsync();
-            return Ok(data);
-        }
-
-        [HttpGet("getOperations")]
-        public async Task<IActionResult> GetOperations()
-        {
-            var data = await _dbContext.OperationDefinitions.OrderBy(x => x.OpNumber).ToListAsync();
             return Ok(data);
         }
 

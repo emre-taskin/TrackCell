@@ -21,6 +21,10 @@ export class NcManagementService {
     return this.http.get<NonConformance[]>(this.ncBase);
   }
 
+  createNonConformance(dto: { code: string; description: string }): Observable<NonConformance> {
+    return this.http.post<NonConformance>(this.ncBase, dto);
+  }
+
   getImagesForPart(partDefinitionId: number): Observable<PartImage[]> {
     return this.http.get<PartImage[]>(`${this.imgBase}?partDefinitionId=${partDefinitionId}`);
   }
