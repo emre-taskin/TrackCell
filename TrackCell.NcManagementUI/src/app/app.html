@@ -33,6 +33,12 @@
           <span>NC Heatmap</span>
         </a>
       }
+      @if (canViewInspectionResults()) {
+        <a class="nav-link" routerLink="/inspection-results" routerLinkActive="active">
+          <span class="nav-icon material-symbols-rounded">fact_check</span>
+          <span>Inspection Results</span>
+        </a>
+      }
       @if (canViewTickets()) {
         <a class="nav-link" routerLink="/tickets" routerLinkActive="active">
           <span class="nav-icon material-symbols-rounded">confirmation_number</span>
