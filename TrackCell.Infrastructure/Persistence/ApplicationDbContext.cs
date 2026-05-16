@@ -18,6 +18,7 @@ namespace TrackCell.Infrastructure.Persistence
         public DbSet<ImageZone> ImageZones { get; set; } = null!;
         public DbSet<ImageZoneNonConformance> ImageZoneNonConformances { get; set; } = null!;
         public DbSet<InspectionResult> InspectionResults { get; set; } = null!;
+        public DbSet<PartSerial> PartSerials { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -63,6 +64,12 @@ namespace TrackCell.Infrastructure.Persistence
                 new NonConformance { Id = 6, Code = "NC-CLR", Description = "Wrong Color" },
                 new NonConformance { Id = 7, Code = "NC-CRK", Description = "Crack" },
                 new NonConformance { Id = 8, Code = "NC-BRR", Description = "Burr / Sharp Edge" }
+            );
+
+            modelBuilder.Entity<PartSerial>().HasData(
+                new PartSerial { Id = 1, PartDefinitionId = 1, SerialNumber = "SN-001X-01" },
+                new PartSerial { Id = 2, PartDefinitionId = 1, SerialNumber = "SN-001X-02" },
+                new PartSerial { Id = 3, PartDefinitionId = 2, SerialNumber = "SN-002Y-01" }
             );
         }
     }

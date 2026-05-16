@@ -84,5 +84,12 @@ export const routes: Routes = [
     canActivate: [permissionGuard('manage:operations')],
     data: { title: 'Operations Manager' }
   },
+  {
+    path: 'admin/serials',
+    loadComponent: () =>
+      import('./pages/serials-manager/serials-manager').then(m => m.SerialsManagerComponent),
+    canActivate: [permissionGuard('manage:serials')],
+    data: { title: 'Serials Manager' }
+  },
   { path: '**', redirectTo: 'dashboard' }
 ];

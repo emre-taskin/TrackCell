@@ -26,6 +26,7 @@ namespace TrackCell.API.Controllers
         {
             if (partImageId <= 0) return BadRequest("partImageId is required.");
             var results = await _dbContext.InspectionResults
+                .Include(r => r.PartSerial)
                 .Where(r => r.PartImageId == partImageId)
                 .OrderByDescending(r => r.InspectedAt)
                 .ToListAsync();
@@ -102,7 +103,7 @@ namespace TrackCell.API.Controllers
                 PartImageId = body.PartImageId,
                 ImageZoneId = body.ImageZoneId,
                 NonConformanceId = body.NonConformanceId,
-                SerialNumber = string.IsNullOrWhiteSpace(body.SerialNumber) ? null : body.SerialNumber.Trim(),
+                PartSerialId = body.PartSerialId,
                 Notes = string.IsNullOrWhiteSpace(body.Notes) ? null : body.Notes.Trim(),
                 InspectedAt = DateTime.UtcNow
             };
@@ -117,7 +118,8 @@ namespace TrackCell.API.Controllers
             PartImageId = r.PartImageId,
             ImageZoneId = r.ImageZoneId,
             NonConformanceId = r.NonConformanceId,
-            SerialNumber = r.SerialNumber,
+            PartSerialId = r.PartSerialId,
+            SerialNumber = r.PartSerial?.SerialNumber,
             Notes = r.Notes,
             InspectedAt = r.InspectedAt
         };

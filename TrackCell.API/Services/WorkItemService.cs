@@ -5,9 +5,11 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using StackExchange.Redis;
+using Microsoft.EntityFrameworkCore;
 using TrackCell.API.Hubs;
 using TrackCell.Domain.Entities;
 using TrackCell.Domain.Enums;
+using TrackCell.Infrastructure.Persistence;
 
 namespace TrackCell.API.Services
 {
@@ -18,23 +20,35 @@ namespace TrackCell.API.Services
         private readonly OperationHistoryService _historyService;
         private const string RedisKey = "TrackCell:ActiveWorkItems";
 
-        public WorkItemService(IConnectionMultiplexer redis, IHubContext<DashboardHub> hubContext, OperationHistoryService historyService)
+        private readonly ApplicationDbContext _dbContext;
+
+        public WorkItemService(IConnectionMultiplexer redis, IHubContext<DashboardHub> hubContext, OperationHistoryService historyService, ApplicationDbContext dbContext)
         {
             _db = redis.GetDatabase();
             _hubContext = hubContext;
             _historyService = historyService;
+            _dbContext = dbContext;
         }
 
         public async Task<WorkItem> StartOperationAsync(WorkItem item)
         {
+            var partSerial = await _dbContext.PartSerials
+                .Include(p => p.PartDefinition)
+                .FirstOrDefaultAsync(p => p.Id == item.PartSerialId);
+                
+            if (partSerial != null)
+            {
+                item.Part = partSerial.PartDefinition?.PartNumber ?? "";
+                item.Serial = partSerial.SerialNumber;
+            }
+
             item.Id = Guid.NewGuid();
             item.Status = WorkItemStatus.InProcess;
             item.CreatedAt = DateTime.UtcNow;
 
             await _historyService.LogActionAsync(
                 item.BadgeNumber,
-                item.Part,
-                item.Serial,
+                item.PartSerialId,
                 item.OpNumber,
                 "Started"
             );
@@ -47,12 +61,11 @@ namespace TrackCell.API.Services
             return item;
         }
 
-        public async Task<bool> CompleteOperationAsync(string part, string serial, string opNumber, string badgeNumber)
+        public async Task<bool> CompleteOperationAsync(int partSerialId, string opNumber, string badgeNumber)
         {
             var activeItems = await GetActiveWorkItemsAsync();
             var item = activeItems.FirstOrDefault(w =>
-                w.Part == part &&
-                w.Serial == serial &&
+                w.PartSerialId == partSerialId &&
                 w.OpNumber == opNumber &&
                 w.Status == WorkItemStatus.InProcess);
 
@@ -60,8 +73,7 @@ namespace TrackCell.API.Services
             {
                 await _historyService.LogActionAsync(
                     !string.IsNullOrEmpty(badgeNumber) ? badgeNumber : item.BadgeNumber,
-                    item.Part,
-                    item.Serial,
+                    item.PartSerialId,
                     item.OpNumber,
                     "Completed"
                 );

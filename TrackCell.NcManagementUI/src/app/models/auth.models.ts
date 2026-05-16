@@ -10,7 +10,8 @@ export type Permission =
   | 'manage:roles'
   | 'manage:parts'
   | 'manage:ncs'
-  | 'manage:operations';
+  | 'manage:operations'
+  | 'manage:serials';
 
 export const ALL_PERMISSIONS: Permission[] = [
   'view:dashboard',

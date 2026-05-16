@@ -10,6 +10,7 @@ namespace TrackCell.Domain.Dtos
         public int PartImageId { get; set; }
         public int ImageZoneId { get; set; }
         public int NonConformanceId { get; set; }
+        public int? PartSerialId { get; set; }
         public string? SerialNumber { get; set; }
         public string? Notes { get; set; }
         public DateTime InspectedAt { get; set; }
@@ -20,7 +21,7 @@ namespace TrackCell.Domain.Dtos
         [Required] public int PartImageId { get; set; }
         [Required] public int ImageZoneId { get; set; }
         [Required] public int NonConformanceId { get; set; }
-        [MaxLength(100)] public string? SerialNumber { get; set; }
+        public int? PartSerialId { get; set; }
         [MaxLength(500)] public string? Notes { get; set; }
     }
 

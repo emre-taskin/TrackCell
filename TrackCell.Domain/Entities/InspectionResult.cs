@@ -17,8 +17,9 @@ namespace TrackCell.Domain.Entities
         public int NonConformanceId { get; set; }
         public NonConformance? NonConformance { get; set; }
 
-        [MaxLength(100)]
-        public string? SerialNumber { get; set; }
+        public int? PartSerialId { get; set; }
+        
+        public PartSerial? PartSerial { get; set; }
 
         [MaxLength(500)]
         public string? Notes { get; set; }

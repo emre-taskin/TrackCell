@@ -17,13 +17,12 @@ namespace TrackCell.API.Services
             _dbContext = dbContext;
         }
 
-        public async Task LogActionAsync(string badgeNumber, string partNumber, string serialNumber, string opNumber, string actionLevel)
+        public async Task LogActionAsync(string badgeNumber, int partSerialId, string opNumber, string actionLevel)
         {
             _dbContext.OperationHistories.Add(new OperationHistory
             {
                 BadgeNumber = badgeNumber,
-                PartNumber = partNumber,
-                SerialNumber = serialNumber,
+                PartSerialId = partSerialId,
                 OpNumber = opNumber,
                 ActionLevel = actionLevel,
                 Timestamp = DateTime.UtcNow
@@ -34,17 +33,18 @@ namespace TrackCell.API.Services
         public async Task<SerialHistoryDto?> GetSerialHistoryAsync(string serialNumber)
         {
             var history = await _dbContext.OperationHistories
-                .Where(h => h.SerialNumber == serialNumber)
+                .Include(h => h.PartSerial)
+                .ThenInclude(p => p.PartDefinition)
+                .Where(h => h.PartSerial!.SerialNumber == serialNumber)
                 .OrderBy(h => h.Timestamp)
                 .ToListAsync();
 
             if (history.Count == 0) return null;
 
             var lastRecord = history.Last();
-            var partNumber = lastRecord.PartNumber;
-
-            var part = await _dbContext.PartDefinitions
-                .FirstOrDefaultAsync(p => p.PartNumber == partNumber);
+            var partSerial = lastRecord.PartSerial;
+            var part = partSerial?.PartDefinition;
+            var partNumber = part?.PartNumber ?? "";
 
             var completedOps = history
                 .Where(h => h.ActionLevel == "Completed")
@@ -61,6 +61,7 @@ namespace TrackCell.API.Services
 
             return new SerialHistoryDto
             {
+                PartSerialId = partSerial?.Id ?? 0,
                 SerialNumber = serialNumber,
                 PartNumber = partNumber,
                 PartDescription = part?.Description ?? "",

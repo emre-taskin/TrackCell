@@ -13,12 +13,9 @@ namespace TrackCell.Domain.Entities
         public string BadgeNumber { get; set; } = string.Empty;
 
         [Required]
-        [MaxLength(100)]
-        public string PartNumber { get; set; } = string.Empty;
+        public int PartSerialId { get; set; }
 
-        [Required]
-        [MaxLength(100)]
-        public string SerialNumber { get; set; } = string.Empty;
+        public PartSerial? PartSerial { get; set; }
 
         [Required]
         [MaxLength(50)]

@@ -1,0 +1,71 @@
+<div class="page-header">
+  <div>
+    <h2>Serials Manager</h2>
+    <div class="page-sub">Manage serial numbers strictly linked to specific parts.</div>
+  </div>
+</div>
+
+<div class="ops-layout">
+  <!-- Left Panel: Part Selection -->
+  <div class="glass-panel parts-sidebar">
+    <h3>Select Part</h3>
+    <div class="part-list">
+      @for (part of parts(); track part.id) {
+        <div class="part-item" 
+             [class.active]="selectedPartId() === part.id"
+             (click)="selectPart(part.id)">
+          <code>{{ part.partNumber }}</code>
+          <div class="part-desc">{{ part.description }}</div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Right Area: Serials & Form -->
+  @if (selectedPartId() !== null) {
+    <div class="ops-main-area">
+      <div class="glass-panel ops-list-panel">
+        <h3>Serials for Part</h3>
+        @if (serials().length === 0) {
+          <div class="empty-state">No serials defined for this part.</div>
+        } @else {
+          <div class="table-container">
+            <table class="parts-table">
+              <thead>
+                <tr>
+                  <th>Serial Number</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (serial of serials(); track serial.id) {
+                  <tr>
+                    <td class="part-number-col"><code>{{ serial.serialNumber }}</code></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      <div class="glass-panel form-panel">
+        <h3>Add New Serial</h3>
+        <form (ngSubmit)="addSerial()" class="part-form">
+          <div class="form-group">
+            <label>Serial Number <span class="required">*</span></label>
+            <input type="text" class="field-control" [(ngModel)]="newSerialNumber" name="serialNumber" placeholder="e.g. SN-001X-01" required>
+          </div>
+          <button type="submit" class="btn btn-accent" [disabled]="isSubmitting() || !newSerialNumber.trim()">
+            <span class="material-symbols-rounded">add_circle</span>
+            <span>Create Serial</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  } @else {
+    <div class="glass-panel empty-selection-panel">
+      <span class="material-symbols-rounded icon-large">touch_app</span>
+      <p>Please select a part from the sidebar to view or add serials.</p>
+    </div>
+  }
+</div>

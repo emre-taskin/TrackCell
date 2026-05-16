@@ -27,11 +27,10 @@ namespace TrackCell.API.Controllers
         public async Task<IActionResult> Start([FromBody] WorkItem item)
         {
             if (string.IsNullOrWhiteSpace(item.BadgeNumber) ||
-                string.IsNullOrWhiteSpace(item.Part) ||
-                string.IsNullOrWhiteSpace(item.Serial) ||
+                item.PartSerialId <= 0 ||
                 string.IsNullOrWhiteSpace(item.OpNumber))
             {
-                return BadRequest("All properties (BadgeNumber, Part, Serial, OpNumber) are required.");
+                return BadRequest("All properties (BadgeNumber, PartSerialId, OpNumber) are required.");
             }
 
             var createdItem = await _workItemService.StartOperationAsync(item);
@@ -41,15 +40,14 @@ namespace TrackCell.API.Controllers
         [HttpPost("complete")]
         public async Task<IActionResult> Complete([FromBody] CompleteOperationRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.Part) ||
-                string.IsNullOrWhiteSpace(request.Serial) ||
+            if (request.PartSerialId <= 0 ||
                 string.IsNullOrWhiteSpace(request.OpNumber))
             {
-                return BadRequest("Part, Serial, and OpNumber are required.");
+                return BadRequest("PartSerialId and OpNumber are required.");
             }
 
             var success = await _workItemService.CompleteOperationAsync(
-                request.Part, request.Serial, request.OpNumber, request.BadgeNumber);
+                request.PartSerialId, request.OpNumber, request.BadgeNumber);
             if (success)
             {
                 return Ok(new { Message = "Operation completed successfully." });
@@ -60,8 +58,7 @@ namespace TrackCell.API.Controllers
 
     public class CompleteOperationRequest
     {
-        public string Part { get; set; } = string.Empty;
-        public string Serial { get; set; } = string.Empty;
+        public int PartSerialId { get; set; }
         public string OpNumber { get; set; } = string.Empty;
         public string BadgeNumber { get; set; } = string.Empty;
     }

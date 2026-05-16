@@ -15,5 +15,6 @@ namespace TrackCell.Domain.Entities
         public string Description { get; set; } = string.Empty;
 
         public ICollection<OperationDefinition> Operations { get; set; } = new List<OperationDefinition>();
+        public ICollection<PartSerial> Serials { get; set; } = new List<PartSerial>();
     }
 }

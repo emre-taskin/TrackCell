@@ -72,6 +72,12 @@
             <span>NCs</span>
           </a>
         }
+        @if (canManageSerials()) {
+          <a routerLink="/admin/serials" routerLinkActive="active" class="nav-item">
+            <span class="material-symbols-rounded">qr_code</span>
+            Serials
+          </a>
+        }
         @if (canManageOperations()) {
           <a class="nav-link" routerLink="/admin/operations" routerLinkActive="active">
             <span class="nav-icon material-symbols-rounded">account_tree</span>

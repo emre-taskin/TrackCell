@@ -50,6 +50,7 @@ export interface CreateInspectionResultRequest {
   partImageId: number;
   imageZoneId: number;
   nonConformanceId: number;
+  partSerialId?: number;
   serialNumber?: string;
   notes?: string;
 }

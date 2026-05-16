@@ -27,8 +27,7 @@ import { OperationHistoryService } from '../../services/operation-history.servic
 type StepState = 'idle' | 'active' | 'done';
 
 interface PendingCompletion {
-  part: string;
-  serial: string;
+  partSerialId: number;
   opNumber: string;
 }
 
@@ -61,6 +60,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
   // State
   operator = signal<Operator | null>(null);
   serialHistory = signal<SerialHistory | null>(null);
+  partSerialId = signal<number>(0);
   allParts = signal<PartDefinition[]>([]);
   allOps = signal<OperationDefinition[]>([]);
 
@@ -182,8 +182,8 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
       error: (err: HttpErrorResponse) => {
         if (err.status === 404) {
           this.serialHistory.set(null);
-          this.serialInfo.set({ text: 'New serial. Choose a part below.', color: '#f59e0b' });
-          this.enablePartManualSelect();
+          this.partSerialId.set(0);
+          this.serialInfo.set({ text: 'Serial not found. Must be defined in Serials Manager.', color: 'var(--danger-color)' });
         } else {
           this.serialInfo.set({ text: 'Lookup failed.', color: 'var(--danger-color)' });
         }
@@ -195,6 +195,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
     const matchPart = this.allParts().find(p => p.partNumber === history.partNumber);
     const desc = matchPart ? matchPart.description : history.partDescription || '';
     const label = `${desc ? desc + ' ' : ''}(${history.partNumber})`;
+    this.partSerialId.set(history.partSerialId);
     this.partOptions.set([{ value: history.partNumber, label }]);
     this.part = history.partNumber;
     this.partEnabled.set(false);
@@ -275,8 +276,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
     this.workItems
       .start({
         badgeNumber: op.badgeNumber,
-        part: this.part,
-        serial: this.serial.trim(),
+        partSerialId: this.partSerialId(),
         opNumber: this.opNumber
       })
       .subscribe({
@@ -294,6 +294,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
   private reset(): void {
     this.operator.set(null);
     this.serialHistory.set(null);
+    this.partSerialId.set(0);
     this.badge = '';
     this.serial = '';
     this.part = '';
@@ -315,7 +316,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
 
   // ---------- complete flow ----------
   promptCompletion(item: WorkItem): void {
-    this.pendingCompletion = { part: item.part, serial: item.serial, opNumber: item.opNumber };
+    this.pendingCompletion = { partSerialId: item.partSerialId, opNumber: item.opNumber };
     this.confirmBadgeValue = this.operator()?.badgeNumber ?? '';
     this.completionDialog?.nativeElement.showModal();
     setTimeout(() => this.confirmBadge?.nativeElement.focus(), 0);
@@ -335,8 +336,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
     }
     this.workItems
       .complete({
-        part: this.pendingCompletion.part,
-        serial: this.pendingCompletion.serial,
+        partSerialId: this.pendingCompletion.partSerialId,
         opNumber: this.pendingCompletion.opNumber,
         badgeNumber: badge
       })
