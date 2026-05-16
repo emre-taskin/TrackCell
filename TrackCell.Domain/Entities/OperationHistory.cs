@@ -1,30 +1,17 @@
 using System;
-using System.ComponentModel.DataAnnotations;
+using TrackCell.Domain.Enums;
 
 namespace TrackCell.Domain.Entities
 {
-    public class OperationHistory : IEntity
+    public class OperationHistory
     {
-        [Key]
-        public int Id { get; set; }
-
-        [Required]
-        [MaxLength(50)]
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string BadgeNumber { get; set; } = string.Empty;
-
-        [Required]
         public int PartSerialId { get; set; }
-
-        public PartSerial? PartSerial { get; set; }
-
-        [Required]
-        [MaxLength(50)]
+        public string Part { get; set; } = string.Empty;
+        public string Serial { get; set; } = string.Empty;
         public string OpNumber { get; set; } = string.Empty;
-
-        [Required]
-        [MaxLength(20)]
-        public string ActionLevel { get; set; } = string.Empty;
-
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public OperationHistoryStatus Status { get; set; } = OperationHistoryStatus.InProcess;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

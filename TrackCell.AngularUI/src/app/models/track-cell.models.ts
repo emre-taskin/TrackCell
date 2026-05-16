@@ -17,29 +17,20 @@ export interface OperationDefinition {
   description: string;
 }
 
-export interface SerialHistory {
-  partSerialId: number;
-  serialNumber: string;
-  partNumber: string;
-  partDescription: string;
-  completedOps: string[];
-  inProcessOps: string[];
-}
+export type OperationHistoryStatus = 'InProcess' | 'Completed';
 
-export type WorkItemStatus = 'InProcess' | 'Completed';
-
-export interface WorkItem {
+export interface OperationHistory {
   id: string;
   badgeNumber: string;
   partSerialId: number;
   part: string;
   serial: string;
   opNumber: string;
-  status: WorkItemStatus | number;
+  status: OperationHistoryStatus | number;
   createdAt: string;
 }
 
-export interface StartWorkItemRequest {
+export interface StartOperationHistoryRequest {
   badgeNumber: string;
   partSerialId: number;
   opNumber: string;
@@ -50,4 +41,3 @@ export interface CompleteOperationRequest {
   opNumber: string;
   badgeNumber: string;
 }
-

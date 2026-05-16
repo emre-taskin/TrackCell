@@ -4,8 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   OperationDefinition,
-  PartDefinition,
-  SerialHistory
+  PartDefinition
 } from '../models/track-cell.models';
 
 @Injectable({ providedIn: 'root' })
@@ -24,9 +23,5 @@ export class MasterDataService {
   getOperationsByPart(partNumber: string): Observable<OperationDefinition[]> {
     const url = `${this.base}/getOperationsByPart?partNumber=${encodeURIComponent(partNumber)}`;
     return this.http.get<OperationDefinition[]>(url);
-  }
-
-  getSerialHistory(serial: string): Observable<SerialHistory> {
-    return this.http.get<SerialHistory>(`${this.base}/getSerialHistory/${encodeURIComponent(serial)}`);
   }
 }

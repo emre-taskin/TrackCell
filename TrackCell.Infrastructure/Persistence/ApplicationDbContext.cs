@@ -10,7 +10,6 @@ namespace TrackCell.Infrastructure.Persistence
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<PartDefinition> PartDefinitions { get; set; } = null!;
         public DbSet<OperationDefinition> OperationDefinitions { get; set; } = null!;
-        public DbSet<OperationHistory> OperationHistories { get; set; } = null!;
         public DbSet<ServerMetric> ServerMetrics { get; set; } = null!;
         public DbSet<NonConformance> NonConformances { get; set; } = null!;
         public DbSet<PartImage> PartImages { get; set; } = null!;

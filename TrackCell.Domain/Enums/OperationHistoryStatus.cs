@@ -1,6 +1,6 @@
 namespace TrackCell.Domain.Enums
 {
-    public enum WorkItemStatus
+    public enum OperationHistoryStatus
     {
         InProcess,
         Completed
