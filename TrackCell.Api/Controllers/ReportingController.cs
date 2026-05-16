@@ -21,19 +21,35 @@ namespace TrackCell.API.Controllers
         [HttpGet("dashboard-summary")]
         public async Task<IActionResult> GetDashboardSummary()
         {
-            var today = DateTime.UtcNow.Date;
+            var now = DateTime.UtcNow;
+            var todayStart = now.Date;
 
-            // Count inspection findings created today
+            // Count inspection findings created since start of UTC day
             var openNcsToday = await _dbContext.InspectionResults
-                .CountAsync(r => r.InspectedAt >= today);
+                .CountAsync(r => r.InspectedAt >= todayStart);
 
-            // For now, we mock these since full operation tracking and ticket systems are in transition
+            // Active streaks: Serials with 3 or more findings (threshold for ticket is usually 5)
+            var activeStreaks = await _dbContext.InspectionResults
+                .GroupBy(r => r.PartSerialId)
+                .Where(g => g.Count() >= 3 && g.Count() < 5)
+                .CountAsync();
+
+            // Open tickets: Serials with 5 or more findings (auto-ticketed)
+            var openTickets = await _dbContext.InspectionResults
+                .GroupBy(r => r.PartSerialId)
+                .Where(g => g.Count() >= 5)
+                .CountAsync();
+
+            // NC Rate: Mocked for now as we don't have total operation volume yet
+            // In a real system, this would be findings / total_inspections
+            var ncRate = "1.8%";
+
             return Ok(new
             {
                 OpenNcsToday = openNcsToday,
-                NcRate7d = "2.4%",
-                ActiveStreaks = 3,
-                OpenTickets = 5
+                NcRate7d = ncRate,
+                ActiveStreaks = activeStreaks,
+                OpenTickets = openTickets
             });
         }
     }
