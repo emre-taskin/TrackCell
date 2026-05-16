@@ -1,0 +1,43 @@
+<section class="admin-page">
+  <header class="page-header">
+    <div>
+      <h2>Admin</h2>
+      <div class="page-sub">Overview of users, roles, and access control for this installation.</div>
+    </div>
+  </header>
+
+  <div class="admin-grid">
+    <div class="glass-panel stat-card">
+      <div class="stat-label">Users</div>
+      <div class="stat-value">{{ stats().userCount }}</div>
+      <div class="dim small">Total accounts in this installation</div>
+    </div>
+    <div class="glass-panel stat-card">
+      <div class="stat-label">Roles</div>
+      <div class="stat-value">{{ stats().roleCount }}</div>
+      <div class="dim small">{{ stats().builtInRoleCount }} built-in · {{ stats().customRoleCount }} custom</div>
+    </div>
+    <div class="glass-panel stat-card">
+      <div class="stat-label">Signed in as</div>
+      <div class="stat-value small-value">{{ currentUser()?.displayName ?? '—' }}</div>
+      <div class="dim small">{{ currentUser()?.username }}</div>
+    </div>
+  </div>
+
+  <div class="admin-actions">
+    <a class="glass-panel action-card" routerLink="/admin/users" [class.disabled]="!canManageUsers()">
+      <div class="action-icon">👥</div>
+      <div>
+        <div class="action-title">User Management</div>
+        <div class="dim small">Create, edit, and assign roles to users.</div>
+      </div>
+    </a>
+    <a class="glass-panel action-card" routerLink="/admin/roles" [class.disabled]="!canManageRoles()">
+      <div class="action-icon">🛡️</div>
+      <div>
+        <div class="action-title">Roles &amp; Permissions</div>
+        <div class="dim small">Define roles and the permissions they grant.</div>
+      </div>
+    </a>
+  </div>
+</section>

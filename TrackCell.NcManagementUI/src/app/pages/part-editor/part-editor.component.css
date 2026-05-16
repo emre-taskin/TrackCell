@@ -5,6 +5,27 @@
   color: var(--text-primary);
 }
 
+.readonly-badge {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.readonly-banner {
+  border-left: 4px solid var(--warning-color);
+  padding: 0.8rem 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.readonly-banner strong {
+  color: var(--text-primary);
+}
+
 .nc-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -153,6 +174,8 @@
   inset: 0;
   cursor: crosshair;
 }
+.zone-overlay.readonly { cursor: default; }
+.zone-overlay.readonly .zone-rect { cursor: default; }
 
 .zone-rect {
   position: absolute;

@@ -1,0 +1,124 @@
+<section class="users-page">
+  <header class="page-header">
+    <div>
+      <h2>User Management</h2>
+      <div class="page-sub">Create users and assign them one or more roles.</div>
+    </div>
+    <button type="button" class="btn btn-accent" (click)="startCreate()">+ New User</button>
+  </header>
+
+  @if (showCreateForm()) {
+    <div class="glass-panel form-card">
+      <h3>{{ editingUserId() ? 'Edit user' : 'Create user' }}</h3>
+      <div class="form-grid">
+        <label class="field">
+          <span class="field-label">Username</span>
+          <input
+            type="text"
+            class="field-control"
+            [ngModel]="draft().username"
+            (ngModelChange)="draft.set({ ...draft(), username: $event })"
+            placeholder="jdoe"
+          />
+        </label>
+        <label class="field">
+          <span class="field-label">Display name</span>
+          <input
+            type="text"
+            class="field-control"
+            [ngModel]="draft().displayName"
+            (ngModelChange)="draft.set({ ...draft(), displayName: $event })"
+            placeholder="Jane Doe"
+          />
+        </label>
+        <label class="field">
+          <span class="field-label">Email</span>
+          <input
+            type="email"
+            class="field-control"
+            [ngModel]="draft().email"
+            (ngModelChange)="draft.set({ ...draft(), email: $event })"
+            placeholder="jane@example.com"
+          />
+        </label>
+      </div>
+
+      <div class="role-picker">
+        <div class="field-label">Roles</div>
+        @for (r of roles(); track trackRole($index, r)) {
+          <label class="role-check">
+            <input
+              type="checkbox"
+              [checked]="isRoleSelected(r.id)"
+              (change)="toggleRole(r.id, $event)"
+            />
+            <span class="role-name">{{ r.name }}</span>
+            <span class="dim small">{{ r.description }}</span>
+          </label>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn" (click)="cancelEdit()">Cancel</button>
+        <button type="button" class="btn btn-accent" (click)="save()">
+          {{ editingUserId() ? 'Save changes' : 'Create user' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="glass-panel">
+    @if (users().length === 0) {
+      <p class="dim">No users defined.</p>
+    } @else {
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Roles</th>
+            <th>Created</th>
+            <th class="actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of users(); track trackUser($index, u)) {
+            <tr [class.active]="u.id === currentUser()?.id">
+              <td>
+                <div class="user-cell">
+                  <div class="user-name">{{ u.displayName }}</div>
+                  <div class="dim small">{{ u.username }}</div>
+                </div>
+                @if (u.id === currentUser()?.id) {
+                  <span class="badge">current</span>
+                }
+              </td>
+              <td>{{ u.email || '—' }}</td>
+              <td>{{ roleNames(u) }}</td>
+              <td class="dim small">{{ u.createdAt | date:'short' }}</td>
+              <td class="actions-col">
+                <button
+                  type="button"
+                  class="btn small-btn"
+                  (click)="switchTo(u)"
+                  [disabled]="u.id === currentUser()?.id"
+                >Switch</button>
+                <button
+                  type="button"
+                  class="btn small-btn"
+                  (click)="startEdit(u)"
+                >Edit</button>
+                <button
+                  type="button"
+                  class="btn small-btn danger"
+                  (click)="deleteUser(u)"
+                  [disabled]="u.id === currentUser()?.id"
+                >Delete</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</section>
