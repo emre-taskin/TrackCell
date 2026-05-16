@@ -1,0 +1,108 @@
+<section class="roles-page">
+  <header class="page-header">
+    <div>
+      <h2>Roles &amp; Permissions</h2>
+      <div class="page-sub">Define roles and the permissions they grant. Built-in roles cannot be renamed or deleted.</div>
+    </div>
+    <button type="button" class="btn btn-accent" (click)="startCreate()">+ New Role</button>
+  </header>
+
+  @if (showForm()) {
+    <div class="glass-panel form-card">
+      <h3>{{ editingRoleId() ? 'Edit role' : 'Create role' }}</h3>
+      @if (isEditingBuiltIn()) {
+        <div class="info-banner small">
+          This is a built-in role. Only the description can be edited; name and permissions are locked.
+        </div>
+      }
+
+      <div class="form-grid">
+        <label class="field">
+          <span class="field-label">Name</span>
+          <input
+            type="text"
+            class="field-control"
+            [ngModel]="draft().name"
+            (ngModelChange)="draft.set({ ...draft(), name: $event })"
+            [disabled]="isEditingBuiltIn()"
+            placeholder="e.g. Quality Lead"
+          />
+        </label>
+        <label class="field full">
+          <span class="field-label">Description</span>
+          <input
+            type="text"
+            class="field-control"
+            [ngModel]="draft().description"
+            (ngModelChange)="draft.set({ ...draft(), description: $event })"
+            placeholder="What this role is for"
+          />
+        </label>
+      </div>
+
+      <div class="perm-picker">
+        <div class="field-label">Permissions</div>
+        <div class="perm-grid">
+          @for (p of allPermissions; track trackPerm($index, p)) {
+            <label class="perm-check">
+              <input
+                type="checkbox"
+                [checked]="isPermissionSelected(p)"
+                (change)="togglePermission(p, $event)"
+                [disabled]="isEditingBuiltIn()"
+              />
+              <div>
+                <div class="perm-label">{{ permissionLabel(p) }}</div>
+                <div class="dim small">{{ p }}</div>
+              </div>
+            </label>
+          }
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn" (click)="cancel()">Cancel</button>
+        <button type="button" class="btn btn-accent" (click)="save()">
+          {{ editingRoleId() ? 'Save changes' : 'Create role' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="role-list">
+    @for (r of roles(); track trackRole($index, r)) {
+      <div class="glass-panel role-card">
+        <div class="role-head">
+          <div>
+            <div class="role-title">
+              {{ r.name }}
+              @if (r.builtIn) {
+                <span class="badge">built-in</span>
+              }
+            </div>
+            <div class="dim small">{{ r.description }}</div>
+          </div>
+          <div class="role-actions">
+            <span class="dim small">{{ userCountForRole(r.id) }} user(s)</span>
+            <button type="button" class="btn small-btn" (click)="startEdit(r)">Edit</button>
+            <button
+              type="button"
+              class="btn small-btn danger"
+              (click)="deleteRole(r)"
+              [disabled]="r.builtIn"
+            >Delete</button>
+          </div>
+        </div>
+
+        <div class="perm-chips">
+          @if (r.permissions.length === 0) {
+            <span class="dim small">No permissions granted.</span>
+          }
+          @for (p of r.permissions; track p) {
+            <span class="perm-chip">{{ permissionLabel(p) }}</span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</section>

@@ -9,23 +9,60 @@
     </div>
 
     <nav class="nav-list">
-      <a class="nav-link" routerLink="/part-editor" routerLinkActive="active">
-        <span class="nav-icon">🧩</span>
-        <span>Part Editor</span>
-      </a>
-      <a class="nav-link" routerLink="/inspector" routerLinkActive="active">
-        <span class="nav-icon">🔎</span>
-        <span>Inspector</span>
-      </a>
-      <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">
-        <span class="nav-icon">📊</span>
-        <span>Dashboard</span>
-      </a>
-      <a class="nav-link" routerLink="/tickets" routerLinkActive="active">
-        <span class="nav-icon">🎫</span>
-        <span>Tickets</span>
-      </a>
+      @if (canViewDashboard()) {
+        <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </a>
+      }
+      @if (canViewPartEditor()) {
+        <a class="nav-link" routerLink="/part-editor" routerLinkActive="active">
+          <span class="nav-icon">🧩</span>
+          <span>Part Editor</span>
+        </a>
+      }
+      @if (canViewInspector()) {
+        <a class="nav-link" routerLink="/inspector" routerLinkActive="active">
+          <span class="nav-icon">🔎</span>
+          <span>Inspector</span>
+        </a>
+      }
+      @if (canViewTickets()) {
+        <a class="nav-link" routerLink="/tickets" routerLinkActive="active">
+          <span class="nav-icon">🎫</span>
+          <span>Tickets</span>
+        </a>
+      }
+
+      @if (canViewAdmin() || canManageUsers() || canManageRoles()) {
+        <div class="nav-section">Administration</div>
+        @if (canViewAdmin()) {
+          <a class="nav-link" routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            <span class="nav-icon">⚙️</span>
+            <span>Admin</span>
+          </a>
+        }
+        @if (canManageUsers()) {
+          <a class="nav-link" routerLink="/admin/users" routerLinkActive="active">
+            <span class="nav-icon">👥</span>
+            <span>Users</span>
+          </a>
+        }
+        @if (canManageRoles()) {
+          <a class="nav-link" routerLink="/admin/roles" routerLinkActive="active">
+            <span class="nav-icon">🛡️</span>
+            <span>Roles</span>
+          </a>
+        }
+      }
     </nav>
+
+    @if (currentUser(); as user) {
+      <div class="user-card">
+        <div class="user-name">{{ user.displayName }}</div>
+        <div class="user-role">{{ currentRoleNames() }}</div>
+      </div>
+    }
 
     <div class="footer">v0.1 · TrackCell MES</div>
   </aside>

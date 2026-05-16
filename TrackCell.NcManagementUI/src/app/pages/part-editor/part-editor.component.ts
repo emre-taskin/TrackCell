@@ -15,6 +15,7 @@ import {
   PartDefinition,
   PartImage
 } from '../../models/nc.models';
+import { AuthService } from '../../services/auth.service';
 import { MasterDataService } from '../../services/master-data.service';
 import { NcManagementService } from '../../services/nc-management.service';
 import { ToastService } from '../../services/toast.service';
@@ -42,6 +43,9 @@ export class PartEditorComponent implements OnInit {
   private master = inject(MasterDataService);
   private nc = inject(NcManagementService);
   private toast = inject(ToastService);
+  private auth = inject(AuthService);
+
+  readonly canEdit = computed(() => this.auth.hasPermission('edit:part-editor'));
 
   @ViewChild('imageEl') imageEl?: ElementRef<HTMLImageElement>;
   @ViewChild('overlayEl') overlayEl?: ElementRef<HTMLDivElement>;
@@ -131,6 +135,11 @@ export class PartEditorComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    if (!this.canEdit()) {
+      this.toast.show('Read-only mode: you lack permission to upload images.', 'error');
+      input.value = '';
+      return;
+    }
     const partId = this.selectedPartId();
     if (!partId) {
       this.toast.show('Select a part first', 'error');
@@ -158,6 +167,10 @@ export class PartEditorComponent implements OnInit {
 
   deleteImage(img: PartImage, ev: Event): void {
     ev.stopPropagation();
+    if (!this.canEdit()) {
+      this.toast.show('Read-only mode: you lack permission to delete images.', 'error');
+      return;
+    }
     if (!confirm(`Delete image "${img.name}"? This removes its zones too.`)) return;
     this.nc.deleteImage(img.id).subscribe({
       next: () => {
@@ -179,6 +192,7 @@ export class PartEditorComponent implements OnInit {
 
   onOverlayMouseDown(ev: MouseEvent): void {
     if (!this.selectedImage()) return;
+    if (!this.canEdit()) return;
     const rect = this.overlayEl!.nativeElement.getBoundingClientRect();
     const x = (ev.clientX - rect.left) / rect.width;
     const y = (ev.clientY - rect.top) / rect.height;
@@ -271,12 +285,17 @@ export class PartEditorComponent implements OnInit {
   }
 
   removeZone(idx: number): void {
+    if (!this.canEdit()) return;
     this.zones.update(list => list.filter((_, i) => i !== idx));
     this.selectedZoneIdx.set(null);
     this.dirty.set(true);
   }
 
   toggleNcOnSelected(ncId: number, ev: Event): void {
+    if (!this.canEdit()) {
+      (ev.target as HTMLInputElement).checked = this.ncSelectedOnZone(ncId);
+      return;
+    }
     const checked = (ev.target as HTMLInputElement).checked;
     const idx = this.selectedZoneIdx();
     if (idx === null) return;
@@ -291,6 +310,10 @@ export class PartEditorComponent implements OnInit {
   }
 
   onZoneNameInput(idx: number, ev: Event): void {
+    if (!this.canEdit()) {
+      (ev.target as HTMLInputElement).value = this.zones()[idx]?.name ?? '';
+      return;
+    }
     const value = (ev.target as HTMLInputElement).value;
     this.zones.update(list => list.map((z, i) => i === idx ? { ...z, name: value } : z));
     this.dirty.set(true);
@@ -311,6 +334,10 @@ export class PartEditorComponent implements OnInit {
   }
 
   saveZones(): void {
+    if (!this.canEdit()) {
+      this.toast.show('Read-only mode: you lack permission to save zones.', 'error');
+      return;
+    }
     const img = this.selectedImage();
     if (!img) return;
     const cleaned = this.zones().filter(z => z.width >= 0.01 && z.height >= 0.01);

@@ -4,7 +4,18 @@
       <h2>Part Editor</h2>
       <div class="page-sub">Upload part sketches, draw zones, and select allowed non-conformance types per zone.</div>
     </div>
+    @if (!canEdit()) {
+      <div class="readonly-badge">Read-only</div>
+    }
   </header>
+
+  @if (!canEdit()) {
+    <div class="readonly-banner glass-panel">
+      You are viewing the Part Editor in read-only mode. You can browse parts, images, and zones,
+      but you cannot upload, draw, or save. Ask an administrator to grant the
+      <strong>Edit Part Editor</strong> permission to make changes.
+    </div>
+  }
 
   <header class="nc-toolbar glass-panel">
     <div class="toolbar-group">
@@ -22,32 +33,34 @@
       </select>
     </div>
 
-    <div class="toolbar-group">
-      <label for="imgName" class="field-label">New image name</label>
-      <input
-        id="imgName"
-        class="field-control"
-        type="text"
-        placeholder="e.g. Front view"
-        [(ngModel)]="newImageName"
-        [disabled]="!selectedPartId()"
-      />
-      <input
-        #fileInput
-        class="hidden-file"
-        type="file"
-        accept="image/*"
-        (change)="onFilePicked($event)"
-      />
-      <button
-        type="button"
-        class="btn btn-accent"
-        [disabled]="!selectedPartId() || uploading()"
-        (click)="fileInput.click()"
-      >
-        {{ uploading() ? 'Uploading...' : 'Upload Image' }}
-      </button>
-    </div>
+    @if (canEdit()) {
+      <div class="toolbar-group">
+        <label for="imgName" class="field-label">New image name</label>
+        <input
+          id="imgName"
+          class="field-control"
+          type="text"
+          placeholder="e.g. Front view"
+          [(ngModel)]="newImageName"
+          [disabled]="!selectedPartId()"
+        />
+        <input
+          #fileInput
+          class="hidden-file"
+          type="file"
+          accept="image/*"
+          (change)="onFilePicked($event)"
+        />
+        <button
+          type="button"
+          class="btn btn-accent"
+          [disabled]="!selectedPartId() || uploading()"
+          (click)="fileInput.click()"
+        >
+          {{ uploading() ? 'Uploading...' : 'Upload Image' }}
+        </button>
+      </div>
+    }
   </header>
 
   @if (!selectedPartId()) {
@@ -72,12 +85,14 @@
                 <div class="name">{{ img.name }}</div>
                 <div class="dim small">{{ img.zones.length }} zone(s)</div>
               </div>
-              <button
-                type="button"
-                class="btn-icon"
-                title="Delete image"
-                (click)="deleteImage(img, $event)"
-              >×</button>
+              @if (canEdit()) {
+                <button
+                  type="button"
+                  class="btn-icon"
+                  title="Delete image"
+                  (click)="deleteImage(img, $event)"
+                >×</button>
+              }
             </li>
           }
         </ul>
@@ -87,10 +102,16 @@
         @if (!selectedImage()) {
           <p class="dim">Select or upload an image to start drawing zones.</p>
         } @else {
-          <div class="canvas-help dim small">
-            Click &amp; drag on the image to draw a new zone. Drag a zone to move it,
-            drag its bottom-right handle to resize. Selected zone = green.
-          </div>
+          @if (canEdit()) {
+            <div class="canvas-help dim small">
+              Click &amp; drag on the image to draw a new zone. Drag a zone to move it,
+              drag its bottom-right handle to resize. Selected zone = green.
+            </div>
+          } @else {
+            <div class="canvas-help dim small">
+              Read-only view. Click a zone to inspect its non-conformances.
+            </div>
+          }
           <div class="canvas-wrap">
             <div class="canvas-inner">
               <img
@@ -103,6 +124,7 @@
             <div
               #overlayEl
               class="zone-overlay"
+              [class.readonly]="!canEdit()"
               (mousedown)="onOverlayMouseDown($event)"
               (mousemove)="onOverlayMouseMove($event)"
               (mouseup)="onOverlayMouseUp()"
@@ -123,30 +145,34 @@
                   <span class="zone-label" [attr.data-handle]="'move'" [attr.data-zone-idx]="i">
                     {{ z.name }}
                   </span>
-                  <span
-                    class="zone-handle"
-                    [attr.data-handle]="'br'"
-                    [attr.data-zone-idx]="i"
-                  ></span>
+                  @if (canEdit()) {
+                    <span
+                      class="zone-handle"
+                      [attr.data-handle]="'br'"
+                      [attr.data-zone-idx]="i"
+                    ></span>
+                  }
                 </div>
               }
             </div>
           </div>
         </div>
 
-          <div class="canvas-actions">
-            <button
-              type="button"
-              class="btn btn-accent"
-              [disabled]="!dirty() || saving()"
-              (click)="saveZones()"
-            >
-              {{ saving() ? 'Saving...' : (dirty() ? 'Save Zones' : 'Saved') }}
-            </button>
-            @if (dirty()) {
-              <span class="dim small">Unsaved changes</span>
-            }
-          </div>
+          @if (canEdit()) {
+            <div class="canvas-actions">
+              <button
+                type="button"
+                class="btn btn-accent"
+                [disabled]="!dirty() || saving()"
+                (click)="saveZones()"
+              >
+                {{ saving() ? 'Saving...' : (dirty() ? 'Save Zones' : 'Saved') }}
+              </button>
+              @if (dirty()) {
+                <span class="dim small">Unsaved changes</span>
+              }
+            </div>
+          }
         }
       </main>
 
@@ -167,13 +193,16 @@
                     [value]="z.name"
                     (input)="onZoneNameInput(i, $event)"
                     (click)="$event.stopPropagation()"
+                    [readonly]="!canEdit()"
                   />
-                  <button
-                    type="button"
-                    class="btn-icon"
-                    title="Remove zone"
-                    (click)="removeZone(i); $event.stopPropagation()"
-                  >×</button>
+                  @if (canEdit()) {
+                    <button
+                      type="button"
+                      class="btn-icon"
+                      title="Remove zone"
+                      (click)="removeZone(i); $event.stopPropagation()"
+                    >×</button>
+                  }
                 </div>
                 <div class="zone-ncs dim small">{{ ncNamesForZone(z) }}</div>
               </li>
@@ -192,6 +221,7 @@
                     type="checkbox"
                     [checked]="ncSelectedOnZone(n.id)"
                     (change)="toggleNcOnSelected(n.id, $event)"
+                    [disabled]="!canEdit()"
                   />
                   <span class="nc-code">{{ n.code }}</span>
                   <span class="nc-desc">{{ n.description }}</span>

@@ -118,6 +118,36 @@ body {
   font-size: 1rem;
 }
 
+.side-nav .nav-section {
+  padding: 0.9rem 0.85rem 0.35rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.side-nav .user-card {
+  margin: 0.5rem 0.75rem;
+  padding: 0.6rem 0.7rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+}
+.side-nav .user-card .user-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.side-nav .user-card .user-role {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .side-nav .footer {
   padding: 0.75rem 1rem 1.25rem;
   color: var(--text-secondary);
@@ -245,6 +275,8 @@ body {
   .side-nav .brand-title,
   .side-nav .brand-sub,
   .side-nav .nav-link span:not(.nav-icon),
+  .side-nav .nav-section,
+  .side-nav .user-card,
   .side-nav .footer { display: none; }
   .side-nav .nav-link { justify-content: center; }
 }
