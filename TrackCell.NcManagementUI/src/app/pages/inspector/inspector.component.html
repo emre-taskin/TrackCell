@@ -77,13 +77,152 @@
       </div>
 
       @if (selectedOperationId() !== null) {
-        <div class="placeholder">
-          <h3>Zone overlay · findings — coming soon</h3>
-          <ul>
-            <li>Render part image with zones overlaid</li>
-            <li>Fast path: mark whole operation OK</li>
-            <li>Detailed path: record findings per zone with photos and notes</li>
-          </ul>
+        <div class="inspection-flow">
+          <div class="inspection-main">
+            <div class="images-section">
+              <div class="field-label">Inspection view</div>
+              <div class="image-tabs">
+                @for (img of partImages(); track img.id) {
+                  <button
+                    class="image-tab"
+                    [class.active]="selectedImage()?.id === img.id"
+                    (click)="selectImage(img)"
+                  >
+                    {{ img.name }}
+                  </button>
+                }
+              </div>
+
+              <div class="image-viewer">
+                @if (selectedImage(); as img) {
+                  <div class="canvas-wrap">
+                    <div class="canvas-inner" style="position: relative;">
+                      <img
+                        #imageEl
+                        [src]="imageSrc(img)"
+                        [alt]="img.name"
+                        class="display-image"
+                        (load)="onImageLoad(imageEl, overlayEl)"
+                      />
+                      <div
+                        #overlayEl
+                        class="zone-overlay"
+                      >
+                        @for (z of img.zones; track z.id) {
+                          <div
+                            class="zone-rect"
+                            [class.selected]="selectedZoneId() === z.id"
+                            [class.has-finding]="hasFinding(z.id)"
+                            [style.left.%]="z.x * 100"
+                            [style.top.%]="z.y * 100"
+                            [style.width.%]="z.width * 100"
+                            [style.height.%]="z.height * 100"
+                            (click)="selectZone(z.id)"
+                          >
+                            <span class="zone-label">{{ z.name }}</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                } @else {
+                  <p class="dim">No images available for this part.</p>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="inspection-sidebar">
+            @if (isReviewing()) {
+              <div class="review-view glass-panel">
+                <div class="review-head">
+                  <div class="field-label">Inspection Review</div>
+                  <button class="btn-icon" (click)="isReviewing.set(false)">×</button>
+                </div>
+
+                <div class="findings-list">
+                  @if (findings().length === 0) {
+                    <div class="review-empty">
+                      <div class="dim">No non-conformances recorded.</div>
+                      <div class="small dim">The part will be marked as conforming.</div>
+                    </div>
+                  } @else {
+                    @for (f of findings(); track $index) {
+                      <div class="review-item">
+                        <div class="review-meta">
+                          <span class="review-zone">{{ f.zoneName }}</span>
+                          <span class="review-code">{{ f.ncCode }}</span>
+                        </div>
+                        @if (f.notes) {
+                          <div class="review-notes dim small">"{{ f.notes }}"</div>
+                        }
+                        <button class="btn-icon" (click)="removeFinding($index)">×</button>
+                      </div>
+                    }
+                  }
+                </div>
+
+                <div class="inspection-controls">
+                  <button class="btn btn-accent" (click)="submitInspection()">Confirm &amp; Submit</button>
+                  <button class="btn" (click)="isReviewing.set(false)">Back to Inspection</button>
+                </div>
+              </div>
+            } @else if (selectedZoneId(); as zoneId) {
+              <div class="findings-area glass-panel">
+                <div class="findings-head">
+                  <div class="field-label">Findings for: {{ getSelectedZone()?.name }}</div>
+                  <button class="btn-icon" (click)="selectedZoneId.set(null)">×</button>
+                </div>
+
+                <div class="nc-selection">
+                  @if (getAvailableNCs().length === 0) {
+                    <p class="dim small">No NC types allowed for this zone.</p>
+                  } @else {
+                    <div class="nc-grid">
+                      @for (nc of getAvailableNCs(); track nc.id) {
+                        <button
+                          class="nc-btn"
+                          [class.active]="isNcSelected(nc.id)"
+                          (click)="toggleFinding(nc)"
+                        >
+                          <span class="nc-code">{{ nc.code }}</span>
+                          <span class="nc-desc">{{ nc.description }}</span>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <div class="findings-form">
+                  <label class="field-label">Notes for this zone</label>
+                  <textarea
+                    class="field-control"
+                    placeholder="Add details..."
+                    [ngModel]="currentNotes()"
+                    (ngModelChange)="onNotesChange($event)"
+                  ></textarea>
+                </div>
+
+                <button class="btn btn-accent" (click)="selectedZoneId.set(null)">Done with Zone</button>
+              </div>
+            } @else {
+              <div class="instruction-banner">
+                <div class="dim small">Select a zone on the image to record a finding.</div>
+                @if (findings().length > 0) {
+                  <div class="findings-summary">
+                    <div class="summary-count">{{ findings().length }} findings recorded</div>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (!isReviewing()) {
+              <div class="inspection-controls">
+                <button class="btn btn-accent" (click)="isReviewing.set(true)">Complete Inspection</button>
+                <button class="btn" (click)="reset()">Cancel</button>
+              </div>
+            }
+          </div>
         </div>
       }
     </div>
