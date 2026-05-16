@@ -4,10 +4,22 @@ export interface PartDefinition {
   description: string;
 }
 
+export interface PartSerial {
+  id: number;
+  partDefinitionId: number;
+  serialNumber: string;
+}
+
 export interface OperationDefinition {
   id: number;
   opNumber: string;
   description: string;
+}
+
+export interface SerialLookupResult {
+  partSerial: PartSerial;
+  partDefinition: PartDefinition;
+  operations: OperationDefinition[];
 }
 
 export interface NonConformance {
