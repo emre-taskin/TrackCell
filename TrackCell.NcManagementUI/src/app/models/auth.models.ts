@@ -25,7 +25,8 @@ export const ALL_PERMISSIONS: Permission[] = [
   'manage:roles',
   'manage:parts',
   'manage:ncs',
-  'manage:operations'
+  'manage:operations',
+  'manage:serials'
 ];
 
 export const PERMISSION_LABELS: Record<Permission, string> = {
@@ -40,7 +41,8 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'manage:roles': 'Manage Roles',
   'manage:parts': 'Manage Parts',
   'manage:ncs': 'Manage NCs',
-  'manage:operations': 'Manage Operations'
+  'manage:operations': 'Manage Operations',
+  'manage:serials': 'Manage Serials'
 };
 
 export interface Role {

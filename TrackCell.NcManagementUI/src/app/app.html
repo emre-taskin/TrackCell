@@ -40,7 +40,7 @@
         </a>
       }
 
-      @if (canViewAdmin() || canManageUsers() || canManageRoles()) {
+      @if (canAccessAdmin()) {
         <div class="nav-section">Administration</div>
         @if (canViewAdmin()) {
           <a class="nav-link" routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
@@ -66,22 +66,22 @@
             <span>Parts</span>
           </a>
         }
-        @if (canManageNcs()) {
-          <a class="nav-link" routerLink="/admin/ncs" routerLinkActive="active">
-            <span class="nav-icon material-symbols-rounded">report</span>
-            <span>NCs</span>
-          </a>
-        }
-        @if (canManageSerials()) {
-          <a routerLink="/admin/serials" routerLinkActive="active" class="nav-item">
-            <span class="material-symbols-rounded">qr_code</span>
-            Serials
-          </a>
-        }
         @if (canManageOperations()) {
           <a class="nav-link" routerLink="/admin/operations" routerLinkActive="active">
             <span class="nav-icon material-symbols-rounded">account_tree</span>
             <span>Operations</span>
+          </a>
+        }
+        @if (canManageSerials()) {
+          <a class="nav-link" routerLink="/admin/serials" routerLinkActive="active">
+            <span class="nav-icon material-symbols-rounded">barcode_scanner</span>
+            <span>Serials</span>
+          </a>
+        }
+        @if (canManageNcs()) {
+          <a class="nav-link" routerLink="/admin/ncs" routerLinkActive="active">
+            <span class="nav-icon material-symbols-rounded">report</span>
+            <span>NCs</span>
           </a>
         }
       }

@@ -96,3 +96,9 @@ export interface SaveZonesRequest {
     nonConformanceIds: number[];
   }[];
 }
+
+export interface PartSerial {
+  id: number;
+  partDefinitionId: number;
+  serialNumber: string;
+}

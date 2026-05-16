@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { OperationDefinition, PartDefinition, PartSerial } from '../../models/nc.models';
+import { OperationDefinition, PartDefinition, PartImage, PartSerial } from '../../models/nc.models';
+import { NcManagementService } from '../../services/nc-management.service';
 import { SerialService } from '../../services/serial.service';
 import { ToastService } from '../../services/toast.service';
 
@@ -14,6 +15,7 @@ import { ToastService } from '../../services/toast.service';
 })
 export class InspectorComponent {
   private serialService = inject(SerialService);
+  private ncService = inject(NcManagementService);
   private toast = inject(ToastService);
 
   serial = signal('');
@@ -23,6 +25,10 @@ export class InspectorComponent {
   resolvedPart = signal<PartDefinition | null>(null);
   operations = signal<OperationDefinition[]>([]);
   selectedOperationId = signal<number | null>(null);
+
+  partImages = signal<PartImage[]>([]);
+  selectedImage = signal<PartImage | null>(null);
+  selectedZoneId = signal<number | null>(null);
 
   lookup(): void {
     const s = this.serial().trim();
@@ -40,6 +46,9 @@ export class InspectorComponent {
         if (result.operations.length === 0) {
           this.toast.show('No operations defined for this part.', 'error');
         }
+
+        // Load images for the part
+        this.loadPartImages(result.partDefinition.id);
       },
       error: (err) => {
         this.isLooking.set(false);
@@ -55,11 +64,34 @@ export class InspectorComponent {
     this.selectedOperationId.set(operationId);
   }
 
+  loadPartImages(partId: number): void {
+    this.ncService.getImagesForPart(partId).subscribe({
+      next: (imgs) => {
+        this.partImages.set(imgs);
+        if (imgs.length > 0) {
+          this.selectedImage.set(imgs[0]);
+        }
+      },
+      error: () => this.toast.show('Failed to load part images', 'error')
+    });
+  }
+
+  selectImage(img: PartImage): void {
+    this.selectedImage.set(img);
+  }
+
+  imageSrc(img: PartImage | null): string {
+    if (!img) return '';
+    return this.ncService.toAbsoluteUrl(img.imageUrl);
+  }
+
   reset(): void {
     this.serial.set('');
     this.resolvedSerial.set(null);
     this.resolvedPart.set(null);
     this.operations.set([]);
     this.selectedOperationId.set(null);
+    this.partImages.set([]);
+    this.selectedImage.set(null);
   }
 }

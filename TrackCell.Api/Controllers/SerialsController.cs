@@ -37,12 +37,19 @@ namespace TrackCell.API.Controllers
 
             var trimmed = serialNumber.Trim();
 
+            // Use case-insensitive comparison for better user experience
             var serial = await _dbContext.PartSerials
                 .Include(s => s.PartDefinition)
-                .FirstOrDefaultAsync(s => s.SerialNumber == trimmed);
+                .FirstOrDefaultAsync(s => s.SerialNumber.ToLower() == trimmed.ToLower());
 
-            if (serial == null || serial.PartDefinition == null)
+            if (serial == null)
                 return NotFound($"Serial '{trimmed}' was not found.");
+
+            // Ensure PartDefinition is loaded (sometimes Include behaves weirdly with In-Memory)
+            var part = serial.PartDefinition ?? await _dbContext.PartDefinitions.FindAsync(serial.PartDefinitionId);
+            
+            if (part == null)
+                return NotFound($"Part definition for serial '{trimmed}' was not found (PartID: {serial.PartDefinitionId}).");
 
             var operations = await _dbContext.OperationDefinitions
                 .Where(o => o.PartDefinitionId == serial.PartDefinitionId)
@@ -59,9 +66,9 @@ namespace TrackCell.API.Controllers
                 },
                 PartDefinition = new PartDefinition
                 {
-                    Id = serial.PartDefinition.Id,
-                    PartNumber = serial.PartDefinition.PartNumber,
-                    Description = serial.PartDefinition.Description
+                    Id = part.Id,
+                    PartNumber = part.PartNumber,
+                    Description = part.Description
                 },
                 Operations = operations
             };
@@ -83,7 +90,7 @@ namespace TrackCell.API.Controllers
 
             var exists = await _dbContext.PartSerials.AnyAsync(s => 
                 s.PartDefinitionId == dto.PartDefinitionId && 
-                s.SerialNumber == dto.SerialNumber);
+                s.SerialNumber.ToLower() == dto.SerialNumber.Trim().ToLower());
             
             if (exists)
                 return BadRequest($"Serial '{dto.SerialNumber}' already exists for this part.");
