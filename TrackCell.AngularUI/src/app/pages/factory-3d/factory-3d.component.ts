@@ -11,10 +11,10 @@ import {
 } from '@angular/core';
 import * as THREE from 'three';
 import { Subscription } from 'rxjs';
-import { WorkItem } from '../../models/track-cell.models';
+import { User, WorkItem } from '../../models/track-cell.models';
 import { ConnectionStatus, DashboardHubService } from '../../services/dashboard-hub.service';
-import { MasterDataService } from '../../services/master-data.service';
 import { ToastService } from '../../services/toast.service';
+import { UserService } from '../../services/user.service';
 import { OperationHistoryService } from '../../services/operation-history.service';
 
 interface MachineParts {
@@ -64,7 +64,7 @@ const PAUSE_THRESHOLD_MS = 2 * 60 * 60 * 1000;
 })
 export class Factory3dComponent implements AfterViewInit, OnDestroy {
   private workItems = inject(OperationHistoryService);
-  private masterData = inject(MasterDataService);
+  private users = inject(UserService);
   private hub = inject(DashboardHubService);
   private toast = inject(ToastService);
   private zone = inject(NgZone);
@@ -566,11 +566,15 @@ export class Factory3dComponent implements AfterViewInit, OnDestroy {
   // ---------- data ----------
   private async fetchOperators(): Promise<void> {
     try {
-      const ops = await new Promise<{ badgeNumber: string; name: string }[]>((resolve, reject) => {
-        this.masterData.getOperators().subscribe({ next: resolve, error: reject });
+      const ops = await new Promise<User[]>((resolve, reject) => {
+        this.users.getByRole('Operator').subscribe({ next: resolve, error: reject });
       });
       this.operatorMap = {};
-      ops.forEach(o => { this.operatorMap[o.badgeNumber] = o.name; });
+      ops.forEach(o => {
+        if (o.badgeNumber) {
+          this.operatorMap[o.badgeNumber] = o.displayName;
+        }
+      });
     } catch (e) {
       console.warn('operators fetch failed', e);
     }

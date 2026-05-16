@@ -17,4 +17,12 @@ namespace TrackCell.Domain.Dtos
         public int UserId { get; set; }
         public string Role { get; set; } = string.Empty;
     }
+
+    public class UserSummaryDto
+    {
+        public int Id { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string? BadgeNumber { get; set; }
+    }
 }

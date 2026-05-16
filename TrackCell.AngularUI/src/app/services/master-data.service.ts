@@ -4,7 +4,6 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   OperationDefinition,
-  Operator,
   PartDefinition,
   SerialHistory
 } from '../models/track-cell.models';
@@ -13,14 +12,6 @@ import {
 export class MasterDataService {
   private http = inject(HttpClient);
   private base = environment.apiBase + environment.masterDataPath;
-
-  getOperators(): Observable<Operator[]> {
-    return this.http.get<Operator[]>(`${this.base}/getOperators`);
-  }
-
-  getOperatorByBadge(badge: string): Observable<Operator> {
-    return this.http.get<Operator>(`${this.base}/getOperatorByBadge/${encodeURIComponent(badge)}`);
-  }
 
   getParts(): Observable<PartDefinition[]> {
     return this.http.get<PartDefinition[]>(`${this.base}/getParts`);

@@ -7,7 +7,6 @@ namespace TrackCell.Infrastructure.Persistence
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-        public DbSet<Operator> Operators { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<PartDefinition> PartDefinitions { get; set; } = null!;
         public DbSet<OperationDefinition> OperationDefinitions { get; set; } = null!;
@@ -26,18 +25,12 @@ namespace TrackCell.Infrastructure.Persistence
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
-            modelBuilder.Entity<Operator>().HasData(
-                new Operator { Id = 1, BadgeNumber = "EMP-1001", Name = "Alice Smith" },
-                new Operator { Id = 2, BadgeNumber = "EMP-1002", Name = "Bob Johnson" },
-                new Operator { Id = 3, BadgeNumber = "EMP-1003", Name = "Charlie Brown" },
-                new Operator { Id = 4, BadgeNumber = "EMP-1004", Name = "Diana Prince" }
-            );
-
             modelBuilder.Entity<User>().HasData(
-                new User { Id = 1, WindowsAccount = "DOMAIN\\asmith",  DisplayName = "Alice Smith",   Role = "Operator", BadgeNumber = "EMP-1001" },
-                new User { Id = 2, WindowsAccount = "DOMAIN\\bjohnson", DisplayName = "Bob Johnson",   Role = "Operator", BadgeNumber = "EMP-1002" },
-                new User { Id = 3, WindowsAccount = "DOMAIN\\cbrown",  DisplayName = "Charlie Brown", Role = "Supervisor", BadgeNumber = "EMP-1003" },
-                new User { Id = 4, WindowsAccount = "DOMAIN\\dprince", DisplayName = "Diana Prince",  Role = "Admin",      BadgeNumber = "EMP-1004" }
+                new User { Id = 1, WindowsAccount = "DOMAIN\\asmith",   DisplayName = "Alice Smith",   Role = "Operator",   BadgeNumber = "EMP-1001" },
+                new User { Id = 2, WindowsAccount = "DOMAIN\\bjohnson", DisplayName = "Bob Johnson",   Role = "Operator",   BadgeNumber = "EMP-1002" },
+                new User { Id = 3, WindowsAccount = "DOMAIN\\cbrown",   DisplayName = "Charlie Brown", Role = "Supervisor", BadgeNumber = "EMP-1003" },
+                new User { Id = 4, WindowsAccount = "DOMAIN\\dprince",  DisplayName = "Diana Prince",  Role = "Admin",      BadgeNumber = "EMP-1004" },
+                new User { Id = 5, WindowsAccount = "DOMAIN\\ewatson",  DisplayName = "Eve Watson",    Role = "Inspector",  BadgeNumber = "EMP-1005" }
             );
 
             modelBuilder.Entity<PartDefinition>().HasData(

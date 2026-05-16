@@ -14,15 +14,18 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import {
   OperationDefinition,
-  Operator,
   PartDefinition,
   SerialHistory,
+  User,
   WorkItem
 } from '../../models/track-cell.models';
 import { DashboardHubService } from '../../services/dashboard-hub.service';
 import { MasterDataService } from '../../services/master-data.service';
 import { ToastService } from '../../services/toast.service';
+import { UserService } from '../../services/user.service';
 import { OperationHistoryService } from '../../services/operation-history.service';
+
+const REQUIRED_ROLE = 'Operator';
 
 type StepState = 'idle' | 'active' | 'done';
 
@@ -40,6 +43,7 @@ interface PendingCompletion {
 })
 export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy {
   private masterData = inject(MasterDataService);
+  private users = inject(UserService);
   private workItems = inject(OperationHistoryService);
   private hub = inject(DashboardHubService);
   private toast = inject(ToastService);
@@ -58,7 +62,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
   opNumber = '';
 
   // State
-  operator = signal<Operator | null>(null);
+  operator = signal<User | null>(null);
   serialHistory = signal<SerialHistory | null>(null);
   partSerialId = signal<number>(0);
   allParts = signal<PartDefinition[]>([]);
@@ -139,9 +143,17 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
 
   private lookupOperator(badge: string): void {
     this.operatorInfo.set({ text: 'Looking up badge...', color: 'var(--text-secondary)' });
-    this.masterData.getOperatorByBadge(badge).subscribe({
-      next: op => {
-        this.operator.set(op);
+    this.users.getByBadge(badge).subscribe({
+      next: user => {
+        if (user.role !== REQUIRED_ROLE) {
+          this.operator.set(null);
+          this.operatorInfo.set({
+            text: `Only ${REQUIRED_ROLE}s can start work here (badge belongs to a ${user.role}).`,
+            color: 'var(--danger-color)'
+          });
+          return;
+        }
+        this.operator.set(user);
         this.operatorInfo.set({ text: '', color: 'var(--success-color)' });
         this.step2.set('active');
         this.serialEnabled.set(true);
@@ -275,7 +287,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
     }
     this.workItems
       .start({
-        badgeNumber: op.badgeNumber,
+        badgeNumber: op.badgeNumber ?? '',
         partSerialId: this.partSerialId(),
         opNumber: this.opNumber
       })

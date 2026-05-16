@@ -1,7 +1,8 @@
-export interface Operator {
+export interface User {
   id: number;
-  badgeNumber: string;
-  name: string;
+  displayName: string;
+  role: string;
+  badgeNumber: string | null;
 }
 
 export interface PartDefinition {
