@@ -1,0 +1,50 @@
+<section class="home">
+  <div class="aurora" aria-hidden="true">
+    <span class="aurora-blob blob-1"></span>
+    <span class="aurora-blob blob-2"></span>
+    <span class="aurora-blob blob-3"></span>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <header class="hero">
+    <div class="eyebrow">
+      <span class="dot"></span>
+      <span>{{ greeting() }}{{ currentUser() ? ', ' + currentUser()!.displayName : '' }}</span>
+    </div>
+    <h1 class="hero-title">
+      <span class="line line-1">TrackCell</span>
+      <span class="line line-2">NC Management</span>
+    </h1>
+    <p class="hero-sub">
+      A unified workspace for inspectors, engineers, and quality leaders —
+      capture non-conformities, surface trends, and drive resolution.
+    </p>
+  </header>
+
+  @if (tiles().length > 0) {
+    <div class="tile-grid">
+      @for (tile of tiles(); track tile.route; let i = $index) {
+        <a
+          class="tile"
+          [routerLink]="tile.route"
+          [style.--tile-accent]="tile.accent"
+          [style.--tile-delay]="(i * 70) + 'ms'"
+        >
+          <span class="tile-glow" aria-hidden="true"></span>
+          <span class="tile-icon">{{ tile.icon }}</span>
+          <span class="tile-title">{{ tile.title }}</span>
+          <span class="tile-desc">{{ tile.description }}</span>
+          <span class="tile-arrow" aria-hidden="true">→</span>
+        </a>
+      }
+    </div>
+  } @else {
+    <div class="glass-panel empty">
+      <div class="empty-icon">🔒</div>
+      <div>
+        <div class="empty-title">No pages available</div>
+        <div class="dim small">Your account doesn't have access to any pages yet. Ask an administrator to assign a role.</div>
+      </div>
+    </div>
+  }
+</section>

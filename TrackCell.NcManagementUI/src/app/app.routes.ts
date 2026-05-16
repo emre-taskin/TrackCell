@@ -5,7 +5,13 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'dashboard'
+    redirectTo: 'home'
+  },
+  {
+    path: 'home',
+    loadComponent: () =>
+      import('./pages/home/home.component').then(m => m.HomeComponent),
+    data: { title: 'Home' }
   },
   {
     path: 'dashboard',
@@ -63,5 +69,5 @@ export const routes: Routes = [
     canActivate: [permissionGuard('manage:roles')],
     data: { title: 'Roles & Permissions' }
   },
-  { path: '**', redirectTo: 'dashboard' }
+  { path: '**', redirectTo: 'home' }
 ];

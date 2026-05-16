@@ -9,6 +9,10 @@
     </div>
 
     <nav class="nav-list">
+      <a class="nav-link" routerLink="/home" routerLinkActive="active">
+        <span class="nav-icon">🏠</span>
+        <span>Home</span>
+      </a>
       @if (canViewDashboard()) {
         <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">
           <span class="nav-icon">📊</span>
