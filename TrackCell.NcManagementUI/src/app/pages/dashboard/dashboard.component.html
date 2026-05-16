@@ -7,7 +7,7 @@
   </header>
 
   <div class="metrics-grid">
-    @for (m of metrics; track m.label) {
+    @for (m of metrics(); track m.label) {
       <div class="metric glass-panel">
         <div class="metric-label">{{ m.label }}</div>
         <div class="metric-value">{{ m.value }}</div>

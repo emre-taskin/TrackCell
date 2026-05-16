@@ -163,8 +163,18 @@
                 </div>
 
                 <div class="inspection-controls">
-                  <button class="btn btn-accent" (click)="submitInspection()">Confirm &amp; Submit</button>
-                  <button class="btn" (click)="isReviewing.set(false)">Back to Inspection</button>
+                  <button
+                    class="btn btn-accent"
+                    (click)="submitInspection()"
+                    [disabled]="isSubmitting()"
+                  >
+                    @if (isSubmitting()) {
+                      Submitting...
+                    } @else {
+                      Confirm &amp; Submit
+                    }
+                  </button>
+                  <button class="btn" [disabled]="isSubmitting()" (click)="isReviewing.set(false)">Back to Inspection</button>
                 </div>
               </div>
             } @else if (selectedZoneId(); as zoneId) {
