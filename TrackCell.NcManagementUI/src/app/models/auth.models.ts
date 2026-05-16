@@ -3,6 +3,7 @@ export type Permission =
   | 'view:part-editor'
   | 'edit:part-editor'
   | 'view:inspector'
+  | 'view:nc-heatmap-report'
   | 'view:tickets'
   | 'view:admin'
   | 'manage:users'
@@ -13,6 +14,7 @@ export const ALL_PERMISSIONS: Permission[] = [
   'view:part-editor',
   'edit:part-editor',
   'view:inspector',
+  'view:nc-heatmap-report',
   'view:tickets',
   'view:admin',
   'manage:users',
@@ -24,6 +26,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'view:part-editor': 'View Part Editor',
   'edit:part-editor': 'Edit Part Editor',
   'view:inspector': 'View Inspector',
+  'view:nc-heatmap-report': 'View NC Heatmap Report',
   'view:tickets': 'View Tickets',
   'view:admin': 'Access Admin Area',
   'manage:users': 'Manage Users',

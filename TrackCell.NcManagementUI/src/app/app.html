@@ -27,6 +27,12 @@
           <span>Inspector</span>
         </a>
       }
+      @if (canViewNcHeatmapReport()) {
+        <a class="nav-link" routerLink="/nc-heatmap-report" routerLinkActive="active">
+          <span class="nav-icon">🔥</span>
+          <span>NC Heatmap</span>
+        </a>
+      }
       @if (canViewTickets()) {
         <a class="nav-link" routerLink="/tickets" routerLinkActive="active">
           <span class="nav-icon">🎫</span>

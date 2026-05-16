@@ -21,6 +21,7 @@ export class App {
   protected readonly canViewDashboard = computed(() => this.auth.hasPermission('view:dashboard'));
   protected readonly canViewPartEditor = computed(() => this.auth.hasPermission('view:part-editor'));
   protected readonly canViewInspector = computed(() => this.auth.hasPermission('view:inspector'));
+  protected readonly canViewNcHeatmapReport = computed(() => this.auth.hasPermission('view:nc-heatmap-report'));
   protected readonly canViewTickets = computed(() => this.auth.hasPermission('view:tickets'));
   protected readonly canViewAdmin = computed(() => this.auth.hasPermission('view:admin'));
   protected readonly canManageUsers = computed(() => this.auth.hasPermission('manage:users'));

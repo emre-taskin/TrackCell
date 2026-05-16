@@ -29,6 +29,13 @@ export const routes: Routes = [
     data: { title: 'Inspector' }
   },
   {
+    path: 'nc-heatmap-report',
+    loadComponent: () =>
+      import('./pages/nc-heatmap-report/nc-heatmap-report.component').then(m => m.NcHeatmapReportComponent),
+    canActivate: [permissionGuard('view:nc-heatmap-report')],
+    data: { title: 'NC Heatmap Report' }
+  },
+  {
     path: 'tickets',
     loadComponent: () =>
       import('./pages/tickets/tickets.component').then(m => m.TicketsComponent),

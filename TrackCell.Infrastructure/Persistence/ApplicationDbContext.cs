@@ -17,6 +17,7 @@ namespace TrackCell.Infrastructure.Persistence
         public DbSet<PartImage> PartImages { get; set; } = null!;
         public DbSet<ImageZone> ImageZones { get; set; } = null!;
         public DbSet<ImageZoneNonConformance> ImageZoneNonConformances { get; set; } = null!;
+        public DbSet<InspectionResult> InspectionResults { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
