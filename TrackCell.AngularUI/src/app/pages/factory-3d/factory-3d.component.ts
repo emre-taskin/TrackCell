@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import * as THREE from 'three';
 import { Subscription } from 'rxjs';
-import { User, WorkItem } from '../../models/track-cell.models';
+import { User, OperationHistory } from '../../models/track-cell.models';
 import { ConnectionStatus, DashboardHubService } from '../../services/dashboard-hub.service';
 import { ToastService } from '../../services/toast.service';
 import { UserService } from '../../services/user.service';
@@ -36,7 +36,7 @@ interface Machine {
   name: string;
   group: THREE.Group;
   parts: MachineParts;
-  items: WorkItem[];
+  items: OperationHistory[];
   count: number;
   state?: string;
 }
@@ -63,7 +63,7 @@ const PAUSE_THRESHOLD_MS = 2 * 60 * 60 * 1000;
   styleUrl: './factory-3d.component.css'
 })
 export class Factory3dComponent implements AfterViewInit, OnDestroy {
-  private workItems = inject(OperationHistoryService);
+  private operationHistory = inject(OperationHistoryService);
   private users = inject(UserService);
   private hub = inject(DashboardHubService);
   private toast = inject(ToastService);
@@ -580,10 +580,10 @@ export class Factory3dComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private async fetchActiveItems(): Promise<WorkItem[]> {
+  private async fetchActiveItems(): Promise<OperationHistory[]> {
     try {
-      return await new Promise<WorkItem[]>((resolve, reject) => {
-        this.workItems.getInProgress().subscribe({ next: resolve, error: reject });
+      return await new Promise<OperationHistory[]>((resolve, reject) => {
+        this.operationHistory.getInProgress().subscribe({ next: resolve, error: reject });
       });
     } catch (e) {
       console.warn('active fetch failed', e);
@@ -591,10 +591,10 @@ export class Factory3dComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private distributeItems(items: WorkItem[]): void {
+  private distributeItems(items: OperationHistory[]): void {
     this.machines.forEach(m => { m.items = []; });
 
-    const opMap: Record<string, WorkItem[]> = {};
+    const opMap: Record<string, OperationHistory[]> = {};
     items.forEach(it => {
       (opMap[it.opNumber] ??= []).push(it);
     });

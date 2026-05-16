@@ -20,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <script>
         // URLs are loaded from window.AppConfig (injected by _Layout from appsettings.json).
-        const API_BASE = window.AppConfig.workItems;
+        const API_BASE = window.AppConfig.operationHistory;
 
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');

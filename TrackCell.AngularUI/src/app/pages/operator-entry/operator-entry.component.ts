@@ -14,10 +14,9 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import {
   OperationDefinition,
+  OperationHistory,
   PartDefinition,
-  SerialHistory,
-  User,
-  WorkItem
+  User
 } from '../../models/track-cell.models';
 import { DashboardHubService } from '../../services/dashboard-hub.service';
 import { MasterDataService } from '../../services/master-data.service';
@@ -44,7 +43,7 @@ interface PendingCompletion {
 export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy {
   private masterData = inject(MasterDataService);
   private users = inject(UserService);
-  private workItems = inject(OperationHistoryService);
+  private operationHistory = inject(OperationHistoryService);
   private hub = inject(DashboardHubService);
   private toast = inject(ToastService);
 
@@ -63,7 +62,6 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
 
   // State
   operator = signal<User | null>(null);
-  serialHistory = signal<SerialHistory | null>(null);
   partSerialId = signal<number>(0);
   allParts = signal<PartDefinition[]>([]);
   allOps = signal<OperationDefinition[]>([]);
@@ -89,7 +87,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
   opOptions = signal<{ value: string; label: string; disabled: boolean }[]>([]);
 
   // Active items
-  activeItems = signal<WorkItem[]>([]);
+  activeItems = signal<OperationHistory[]>([]);
 
   // Completion modal
   pendingCompletion: PendingCompletion | null = null;
@@ -125,7 +123,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private fetchActiveItems(): void {
-    this.workItems.getInProgress().subscribe({
+    this.operationHistory.getInProgress().subscribe({
       next: items => this.activeItems.set(items),
       error: e => console.warn('active fetch failed', e)
     });
@@ -176,44 +174,10 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
       event.preventDefault();
       const v = this.serial.trim();
       if (!v) return;
-      this.lookupSerial(v);
+      this.partSerialId.set(0);
+      this.serialInfo.set({ text: 'Choose a part below.', color: 'var(--text-secondary)' });
+      this.enablePartManualSelect();
     }
-  }
-
-  private lookupSerial(serial: string): void {
-    this.serialInfo.set({ text: 'Looking up serial...', color: 'var(--text-secondary)' });
-    this.masterData.getSerialHistory(serial).subscribe({
-      next: history => {
-        this.serialHistory.set(history);
-        const completedTxt = history.completedOps.length
-          ? ` · Completed: ${history.completedOps.join(', ')}`
-          : '';
-        this.serialInfo.set({ text: `Found in history${completedTxt}`, color: 'var(--success-color)' });
-        this.applySerialMatch(history);
-      },
-      error: (err: HttpErrorResponse) => {
-        if (err.status === 404) {
-          this.serialHistory.set(null);
-          this.partSerialId.set(0);
-          this.serialInfo.set({ text: 'Serial not found. Must be defined in Serials Manager.', color: 'var(--danger-color)' });
-        } else {
-          this.serialInfo.set({ text: 'Lookup failed.', color: 'var(--danger-color)' });
-        }
-      }
-    });
-  }
-
-  private applySerialMatch(history: SerialHistory): void {
-    const matchPart = this.allParts().find(p => p.partNumber === history.partNumber);
-    const desc = matchPart ? matchPart.description : history.partDescription || '';
-    const label = `${desc ? desc + ' ' : ''}(${history.partNumber})`;
-    this.partSerialId.set(history.partSerialId);
-    this.partOptions.set([{ value: history.partNumber, label }]);
-    this.part = history.partNumber;
-    this.partEnabled.set(false);
-    this.partInfo.set({ text: 'Auto-filled from serial history', color: 'var(--text-secondary)' });
-    this.step3.set('done');
-    this.populateOpsForPart(history);
   }
 
   private enablePartManualSelect(): void {
@@ -222,7 +186,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
     this.partOptions.set(opts);
     this.part = '';
     this.partEnabled.set(true);
-    this.partInfo.set({ text: 'Select the part for this new serial', color: 'var(--text-secondary)' });
+    this.partInfo.set({ text: 'Select the part for this serial', color: 'var(--text-secondary)' });
     this.step3.set('active');
     setTimeout(() => this.partSelect?.nativeElement.focus(), 0);
   }
@@ -230,41 +194,21 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
   onPartChange(): void {
     if (!this.part) return;
     this.step3.set('done');
-    this.populateOpsForPart(null);
+    this.populateOpsForPart();
   }
 
-  private populateOpsForPart(history: SerialHistory | null): void {
-    const completed = new Set(history?.completedOps ?? []);
-    const inProcess = new Set(history?.inProcessOps ?? []);
+  private populateOpsForPart(): void {
     const opts: { value: string; label: string; disabled: boolean }[] = [
       { value: '', label: 'Select Operation...', disabled: false }
     ];
-    let suggestedIdx = -1;
-    this.allOps().forEach((o, i) => {
-      let label = `${o.description} (${o.opNumber})`;
-      let disabled = false;
-      if (completed.has(o.opNumber)) {
-        label = '✓ ' + label + ' — done';
-        disabled = true;
-      } else if (inProcess.has(o.opNumber)) {
-        label = '⏳ ' + label + ' — in process';
-      } else if (suggestedIdx === -1) {
-        suggestedIdx = i;
-        label = '▶ ' + label;
-      }
-      opts.push({ value: o.opNumber, label, disabled });
+    this.allOps().forEach(o => {
+      opts.push({ value: o.opNumber, label: `${o.description} (${o.opNumber})`, disabled: false });
     });
     this.opOptions.set(opts);
     this.opEnabled.set(true);
-    if (suggestedIdx >= 0) {
-      this.opNumber = this.allOps()[suggestedIdx].opNumber;
-      this.step4.set('done');
-      this.startEnabled.set(true);
-    } else {
-      this.opNumber = '';
-      this.step4.set('active');
-      this.startEnabled.set(false);
-    }
+    this.opNumber = '';
+    this.step4.set('active');
+    this.startEnabled.set(false);
     setTimeout(() => this.opSelect?.nativeElement.focus(), 0);
   }
 
@@ -285,7 +229,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
       this.toast.show('All fields are required', 'error');
       return;
     }
-    this.workItems
+    this.operationHistory
       .start({
         badgeNumber: op.badgeNumber ?? '',
         partSerialId: this.partSerialId(),
@@ -305,7 +249,6 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
 
   private reset(): void {
     this.operator.set(null);
-    this.serialHistory.set(null);
     this.partSerialId.set(0);
     this.badge = '';
     this.serial = '';
@@ -327,7 +270,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   // ---------- complete flow ----------
-  promptCompletion(item: WorkItem): void {
+  promptCompletion(item: OperationHistory): void {
     this.pendingCompletion = { partSerialId: item.partSerialId, opNumber: item.opNumber };
     this.confirmBadgeValue = this.operator()?.badgeNumber ?? '';
     this.completionDialog?.nativeElement.showModal();
@@ -346,7 +289,7 @@ export class OperatorEntryComponent implements OnInit, AfterViewInit, OnDestroy 
       this.toast.show('Badge number is required', 'error');
       return;
     }
-    this.workItems
+    this.operationHistory
       .complete({
         partSerialId: this.pendingCompletion.partSerialId,
         opNumber: this.pendingCompletion.opNumber,

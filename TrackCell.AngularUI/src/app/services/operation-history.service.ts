@@ -4,8 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   CompleteOperationRequest,
-  StartWorkItemRequest,
-  WorkItem
+  OperationHistory,
+  StartOperationHistoryRequest
 } from '../models/track-cell.models';
 
 @Injectable({ providedIn: 'root' })
@@ -13,12 +13,12 @@ export class OperationHistoryService {
   private http = inject(HttpClient);
   private base = environment.apiBase + environment.operationHistoryPath;
 
-  getInProgress(): Observable<WorkItem[]> {
-    return this.http.get<WorkItem[]>(`${this.base}/inprogress`);
+  getInProgress(): Observable<OperationHistory[]> {
+    return this.http.get<OperationHistory[]>(`${this.base}/inprogress`);
   }
 
-  start(req: StartWorkItemRequest): Observable<WorkItem> {
-    return this.http.post<WorkItem>(`${this.base}/start`, req);
+  start(req: StartOperationHistoryRequest): Observable<OperationHistory> {
+    return this.http.post<OperationHistory>(`${this.base}/start`, req);
   }
 
   complete(req: CompleteOperationRequest): Observable<unknown> {

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { WorkItem } from '../../models/track-cell.models';
+import { OperationHistory } from '../../models/track-cell.models';
 import { DashboardHubService } from '../../services/dashboard-hub.service';
 import { ToastService } from '../../services/toast.service';
 import { OperationHistoryService } from '../../services/operation-history.service';
@@ -10,7 +10,7 @@ interface OpColumn {
   opNumber: string;
   count: number;
   badgeColor: string;
-  items: WorkItem[];
+  items: OperationHistory[];
 }
 
 @Component({
@@ -21,7 +21,7 @@ interface OpColumn {
   styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  private workItems = inject(OperationHistoryService);
+  private operationHistory = inject(OperationHistoryService);
   private hub = inject(DashboardHubService);
   private toast = inject(ToastService);
 
@@ -44,7 +44,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private fetchActiveItems(): void {
-    this.workItems.getInProgress().subscribe({
+    this.operationHistory.getInProgress().subscribe({
       next: items => {
         this.columns.set(this.groupByOp(items));
         this.lastUpdated.set(new Date().toLocaleTimeString());
@@ -53,8 +53,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  private groupByOp(items: WorkItem[]): OpColumn[] {
-    const map: Record<string, WorkItem[]> = {};
+  private groupByOp(items: OperationHistory[]): OpColumn[] {
+    const map: Record<string, OperationHistory[]> = {};
     for (const it of items) {
       (map[it.opNumber] ??= []).push(it);
     }
@@ -68,5 +68,5 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   trackColumn(_: number, c: OpColumn): string { return c.opNumber; }
-  trackItem(_: number, i: WorkItem): string { return `${i.part}-${i.serial}-${i.opNumber}`; }
+  trackItem(_: number, i: OperationHistory): string { return `${i.part}-${i.serial}-${i.opNumber}`; }
 }

@@ -9,22 +9,22 @@ namespace TrackCell.API.Controllers
     [Route("[controller]")]
     public class OperationHistoryController : ControllerBase
     {
-        private readonly WorkItemService _workItemService;
+        private readonly OperationHistoryService _operationHistoryService;
 
-        public OperationHistoryController(WorkItemService workItemService)
+        public OperationHistoryController(OperationHistoryService operationHistoryService)
         {
-            _workItemService = workItemService;
+            _operationHistoryService = operationHistoryService;
         }
 
         [HttpGet("inprogress")]
         public async Task<IActionResult> InProgress()
         {
-            var items = await _workItemService.GetActiveWorkItemsAsync();
+            var items = await _operationHistoryService.GetActiveOperationHistoriesAsync();
             return Ok(items);
         }
 
         [HttpPost("start")]
-        public async Task<IActionResult> Start([FromBody] WorkItem item)
+        public async Task<IActionResult> Start([FromBody] OperationHistory item)
         {
             if (string.IsNullOrWhiteSpace(item.BadgeNumber) ||
                 item.PartSerialId <= 0 ||
@@ -33,7 +33,7 @@ namespace TrackCell.API.Controllers
                 return BadRequest("All properties (BadgeNumber, PartSerialId, OpNumber) are required.");
             }
 
-            var createdItem = await _workItemService.StartOperationAsync(item);
+            var createdItem = await _operationHistoryService.StartOperationAsync(item);
             return Ok(createdItem);
         }
 
@@ -46,13 +46,13 @@ namespace TrackCell.API.Controllers
                 return BadRequest("PartSerialId and OpNumber are required.");
             }
 
-            var success = await _workItemService.CompleteOperationAsync(
+            var success = await _operationHistoryService.CompleteOperationAsync(
                 request.PartSerialId, request.OpNumber, request.BadgeNumber);
             if (success)
             {
                 return Ok(new { Message = "Operation completed successfully." });
             }
-            return NotFound("Active work item not found.");
+            return NotFound("Active operation history not found.");
         }
     }
 

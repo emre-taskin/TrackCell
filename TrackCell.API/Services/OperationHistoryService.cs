@@ -1,73 +1,93 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
+using StackExchange.Redis;
 using Microsoft.EntityFrameworkCore;
-using TrackCell.Domain.Dtos;
+using TrackCell.API.Hubs;
 using TrackCell.Domain.Entities;
+using TrackCell.Domain.Enums;
 using TrackCell.Infrastructure.Persistence;
 
 namespace TrackCell.API.Services
 {
     public class OperationHistoryService
     {
+        private readonly IDatabase _db;
+        private readonly IHubContext<DashboardHub> _hubContext;
+        private const string RedisKey = "TrackCell:ActiveOperationHistories";
+
         private readonly ApplicationDbContext _dbContext;
 
-        public OperationHistoryService(ApplicationDbContext dbContext)
+        public OperationHistoryService(IConnectionMultiplexer redis, IHubContext<DashboardHub> hubContext, ApplicationDbContext dbContext)
         {
+            _db = redis.GetDatabase();
+            _hubContext = hubContext;
             _dbContext = dbContext;
         }
 
-        public async Task LogActionAsync(string badgeNumber, int partSerialId, string opNumber, string actionLevel)
+        public async Task<OperationHistory> StartOperationAsync(OperationHistory item)
         {
-            _dbContext.OperationHistories.Add(new OperationHistory
+            var partSerial = await _dbContext.PartSerials
+                .Include(p => p.PartDefinition)
+                .FirstOrDefaultAsync(p => p.Id == item.PartSerialId);
+
+            if (partSerial != null)
             {
-                BadgeNumber = badgeNumber,
-                PartSerialId = partSerialId,
-                OpNumber = opNumber,
-                ActionLevel = actionLevel,
-                Timestamp = DateTime.UtcNow
-            });
-            await _dbContext.SaveChangesAsync();
+                item.Part = partSerial.PartDefinition?.PartNumber ?? "";
+                item.Serial = partSerial.SerialNumber;
+            }
+
+            item.Id = Guid.NewGuid();
+            item.Status = OperationHistoryStatus.InProcess;
+            item.CreatedAt = DateTime.UtcNow;
+
+            var json = JsonSerializer.Serialize(item);
+            await _db.HashSetAsync(RedisKey, item.Id.ToString(), json);
+
+            await _hubContext.Clients.All.SendAsync("UpdateDashboard");
+
+            return item;
         }
 
-        public async Task<SerialHistoryDto?> GetSerialHistoryAsync(string serialNumber)
+        public async Task<bool> CompleteOperationAsync(int partSerialId, string opNumber, string badgeNumber)
         {
-            var history = await _dbContext.OperationHistories
-                .Include(h => h.PartSerial)
-                .ThenInclude(p => p.PartDefinition)
-                .Where(h => h.PartSerial!.SerialNumber == serialNumber)
-                .OrderBy(h => h.Timestamp)
-                .ToListAsync();
+            var activeItems = await GetActiveOperationHistoriesAsync();
+            var item = activeItems.FirstOrDefault(w =>
+                w.PartSerialId == partSerialId &&
+                w.OpNumber == opNumber &&
+                w.Status == OperationHistoryStatus.InProcess);
 
-            if (history.Count == 0) return null;
-
-            var lastRecord = history.Last();
-            var partSerial = lastRecord.PartSerial;
-            var part = partSerial?.PartDefinition;
-            var partNumber = part?.PartNumber ?? "";
-
-            var completedOps = history
-                .Where(h => h.ActionLevel == "Completed")
-                .Select(h => h.OpNumber)
-                .Distinct()
-                .ToList();
-
-            var startedOps = history
-                .Where(h => h.ActionLevel == "Started")
-                .Select(h => h.OpNumber)
-                .Distinct()
-                .Where(op => !completedOps.Contains(op))
-                .ToList();
-
-            return new SerialHistoryDto
+            if (item != null)
             {
-                PartSerialId = partSerial?.Id ?? 0,
-                SerialNumber = serialNumber,
-                PartNumber = partNumber,
-                PartDescription = part?.Description ?? "",
-                CompletedOps = completedOps,
-                InProcessOps = startedOps
-            };
+                await _db.HashDeleteAsync(RedisKey, item.Id.ToString());
+
+                await _hubContext.Clients.All.SendAsync("UpdateDashboard");
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<IEnumerable<OperationHistory>> GetActiveOperationHistoriesAsync()
+        {
+            var entries = await _db.HashGetAllAsync(RedisKey);
+            var items = new List<OperationHistory>();
+
+            foreach (var entry in entries)
+            {
+                if (entry.Value.HasValue)
+                {
+                    var item = JsonSerializer.Deserialize<OperationHistory>((string)entry.Value!);
+                    if (item != null)
+                    {
+                        items.Add(item);
+                    }
+                }
+            }
+
+            return items.OrderByDescending(w => w.CreatedAt);
         }
     }
 }

@@ -40,7 +40,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-builder.Services.AddScoped<WorkItemService>();
 builder.Services.AddScoped<OperationHistoryService>();
 builder.Services.AddScoped<ServerMetricService>();
 builder.Services.AddScoped<IUserService, UserService>();
