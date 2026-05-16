@@ -355,6 +355,7 @@ export class PartEditorComponent implements OnInit {
     this.nc.saveZones(img.id, body).subscribe({
       next: updated => {
         this.saving.set(false);
+        this.dirty.set(false);
         this.images.update(list => list.map(i => i.id === updated.id ? updated : i));
         this.selectImage(updated);
         this.toast.show('Zones saved');
