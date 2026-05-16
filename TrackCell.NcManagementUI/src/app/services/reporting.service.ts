@@ -8,6 +8,8 @@ export interface DashboardSummary {
   ncRate7d: string;
   activeStreaks: number;
   openTickets: number;
+  streaks: { partName: string, zoneId: number, count: number }[];
+  trend: { date: string, count: number }[];
 }
 
 @Injectable({ providedIn: 'root' })

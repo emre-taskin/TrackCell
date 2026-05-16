@@ -28,28 +28,34 @@ namespace TrackCell.API.Controllers
             var openNcsToday = await _dbContext.InspectionResults
                 .CountAsync(r => r.InspectedAt >= todayStart);
 
-            // Active streaks: Serials with 3 or more findings (threshold for ticket is usually 5)
-            var activeStreaks = await _dbContext.InspectionResults
-                .GroupBy(r => r.PartSerialId)
-                .Where(g => g.Count() >= 3 && g.Count() < 5)
-                .CountAsync();
+            // Active streaks: Top 5 Part/Zone pairs with high NC counts
+            var streaks = await _dbContext.InspectionResults
+                .Include(r => r.PartImage)
+                .GroupBy(r => new { r.PartImageId, r.ImageZoneId })
+                .Select(g => new
+                {
+                    PartName = g.First().PartImage.Name,
+                    ZoneId = g.Key.ImageZoneId,
+                    Count = g.Count()
+                })
+                .OrderByDescending(s => s.Count)
+                .Take(5)
+                .ToListAsync();
 
-            // Open tickets: Serials with 5 or more findings (auto-ticketed)
-            var openTickets = await _dbContext.InspectionResults
-                .GroupBy(r => r.PartSerialId)
-                .Where(g => g.Count() >= 5)
-                .CountAsync();
-
-            // NC Rate: Mocked for now as we don't have total operation volume yet
-            // In a real system, this would be findings / total_inspections
-            var ncRate = "1.8%";
+            // Mocked trend for charts (count per day for last 7 days)
+            var trend = Enumerable.Range(0, 7).Select(i => new {
+                Date = now.Date.AddDays(-i).ToString("MM-dd"),
+                Count = _dbContext.InspectionResults.Count(r => r.InspectedAt.Date == now.Date.AddDays(-i))
+            }).Reverse().ToList();
 
             return Ok(new
             {
                 OpenNcsToday = openNcsToday,
-                NcRate7d = ncRate,
-                ActiveStreaks = activeStreaks,
-                OpenTickets = openTickets
+                NcRate7d = "1.8%",
+                ActiveStreaks = streaks.Count,
+                OpenTickets = await _dbContext.InspectionResults.GroupBy(r => r.PartSerialId).CountAsync(g => g.Count() >= 5),
+                Streaks = streaks,
+                Trend = trend
             });
         }
     }
