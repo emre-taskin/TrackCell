@@ -18,7 +18,7 @@
                (keydown)="onBadgeKeydown($event)" />
         <div class="field-info" [style.color]="operatorInfo().color">
           @if (operator(); as op) {
-            <strong>{{ op.name }}</strong> ({{ op.badgeNumber }})
+            <strong>{{ op.displayName }}</strong> ({{ op.badgeNumber }}) — {{ op.role }}
           } @else {
             {{ operatorInfo().text }}
           }

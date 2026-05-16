@@ -45,6 +45,30 @@ namespace TrackCell.API.Services
             return ToAccessInfo(user);
         }
 
+        public async Task<List<UserSummaryDto>> GetByRoleAsync(string role)
+        {
+            var normalized = role.Trim();
+            var users = await _dbContext.Users
+                .Where(u => u.Role == normalized)
+                .OrderBy(u => u.DisplayName)
+                .ToListAsync();
+            return users.Select(ToSummary).ToList();
+        }
+
+        public async Task<UserSummaryDto?> GetByBadgeAsync(string badgeNumber)
+        {
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.BadgeNumber == badgeNumber);
+            return user == null ? null : ToSummary(user);
+        }
+
+        private static UserSummaryDto ToSummary(User u) => new()
+        {
+            Id = u.Id,
+            DisplayName = u.DisplayName,
+            Role = u.Role,
+            BadgeNumber = u.BadgeNumber
+        };
+
         private static UserAccessInfoDto ToAccessInfo(User u) => new()
         {
             Id = u.Id,

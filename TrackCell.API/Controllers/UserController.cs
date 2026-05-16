@@ -59,5 +59,26 @@ namespace TrackCell.API.Controllers
             if (info == null) return NotFound();
             return Ok(info);
         }
+
+        [HttpGet("byRole/{role}")]
+        public async Task<IActionResult> GetByRole(string role)
+        {
+            if (string.IsNullOrWhiteSpace(role))
+                return BadRequest("role is required.");
+
+            var users = await _service.GetByRoleAsync(role);
+            return Ok(users);
+        }
+
+        [HttpGet("byBadge/{badgeNumber}")]
+        public async Task<IActionResult> GetByBadge(string badgeNumber)
+        {
+            if (string.IsNullOrWhiteSpace(badgeNumber))
+                return BadRequest("badgeNumber is required.");
+
+            var user = await _service.GetByBadgeAsync(badgeNumber);
+            if (user == null) return NotFound();
+            return Ok(user);
+        }
     }
 }
